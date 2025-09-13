@@ -355,54 +355,6 @@ html, body {
   overflow-x: hidden; 
 }
 
-/* === MOBILE LAYOUT FIXES: paste this at the END of your existing <style> block === */
-
-html, body {
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* allow question card and inner panels to expand instead of clipping */
-.question-card,
-.question-card .bg-light {
-  max-height: none !important;
-  overflow: visible !important;
-}
-
-/* make long text wrap so it doesn't overflow the card */
-.question-text,
-.option-container .form-check-label,
-.card .card-body p,
-.card .card-body small,
-.question-card h5,
-.question-card .badge,
-.palette-link {
-  white-space: normal !important;
-  word-wrap: break-word !important;
-  word-break: break-word !important;
-  overflow-wrap: break-word !important;
-}
-
-/* constrain large images on small screens so they don't push content off-screen */
-.question-image img.img-fluid {
-  width: 100% !important;
-  height: auto !important;
-  max-height: 60vh;
-  object-fit: contain;
-}
-
-/* reduce padding on very small screens so content fits */
-@media (max-width: 576px) {
-  .question-card { padding: 12px !important; }
-  .question-text { font-size: 0.95rem; line-height: 1.35; }
-  .question-image img.img-fluid { max-height: 45vh; }
-  .numeric-keypad { max-width: 100% !important; }
-}
-
-/* If you previously hid scrollbars globally, allow thin scrollbars */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 8px; }
 
 
 </style>
