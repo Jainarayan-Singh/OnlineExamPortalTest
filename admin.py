@@ -15,13 +15,15 @@ from flask import session, redirect, url_for, request
 from markupsafe import escape
 import html
 from latex_editor import latex_bp
-
-# New imports for sanitization
-import bleach
 from markupsafe import Markup
+from drive_utils import safe_csv_save_with_retry
+from sessions import require_valid_session, generate_session_token, save_session_record, invalidate_session, get_session_by_token
+from datetime import datetime
+
+
 
 from google_drive_service import (
-    create_drive_service,         # SA (read/write CSV)
+    create_drive_service,         
     create_subject_folder,
     load_csv_from_drive,
     save_csv_to_drive,
@@ -29,6 +31,7 @@ from google_drive_service import (
     find_file_by_name,
     get_drive_service_for_upload  # USER OAUTH (token.json) — for image uploads & folder ops
 )
+from sessions import require_valid_session
 
 # ========== Blueprint ==========
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="templates")
@@ -38,6 +41,7 @@ USERS_FILE_ID     = os.environ.get("USERS_FILE_ID")
 EXAMS_FILE_ID     = os.environ.get("EXAMS_FILE_ID")
 QUESTIONS_FILE_ID = os.environ.get("QUESTIONS_FILE_ID")
 SUBJECTS_FILE_ID  = os.environ.get("SUBJECTS_FILE_ID")
+REQUESTS_RAISED_FILE_ID = os.environ.get("REQUESTS_RAISED_FILE_ID")
 
 UPLOAD_TMP_DIR = os.path.join(os.path.dirname(__file__), "uploads_tmp")
 os.makedirs(UPLOAD_TMP_DIR, exist_ok=True)
@@ -49,13 +53,15 @@ MAX_FILE_SIZE_MB = 15
 BLEACH_ALLOWED_TAGS = ["br", "b", "i", "u", "sup", "sub", "strong", "em"]
 BLEACH_ALLOWED_ATTRIBUTES = {}  # no attributes allowed
 
+EXAM_ATTEMPTS_FILE_ID = os.environ.get("EXAM_ATTEMPTS_FILE_ID")
+
 # ========== Helpers ==========
 def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "admin_id" not in session:
             flash("Admin login required.", "warning")
-            return redirect(url_for("admin.login"))
+            return redirect(url_for("admin.admin_login"))
         return f(*args, **kwargs)
     return wrapper
 
@@ -116,42 +122,102 @@ def sanitize_html(s):
     return str(escape(s))
 
 
-# ========== Auth ==========
 @admin_bp.route("/login", methods=["GET", "POST"])
-def login():
+def admin_login():
     if request.method == "POST":
-        username_or_email = request.form["username"].strip().lower()
-        password = request.form["password"]
-
-        service = create_drive_service()
-        users_df = load_csv_from_drive(service, USERS_FILE_ID)
+        identifier = request.form.get("username", "").strip().lower()
+        password = request.form.get("password", "").strip()
+        from main import load_csv_with_cache
+        users_df = load_csv_with_cache("users.csv")
         if users_df.empty:
-            flash("No users found.", "danger")
-            return redirect(url_for("admin.login"))
+            flash("No users available!", "error")
+            return redirect(url_for("admin.admin_login"))
 
-        user = users_df[
-            ((users_df["email"].astype(str).str.lower() == username_or_email) |
-             (users_df["username"].astype(str).str.lower() == username_or_email)) &
-            (users_df["password"].astype(str) == str(password))
+        users_df["username_lower"] = users_df["username"].astype(str).str.strip().str.lower()
+        users_df["email_lower"] = users_df["email"].astype(str).str.strip().str.lower()
+        users_df["role_lower"] = users_df["role"].astype(str).str.strip().str.lower()
+
+        user_row = users_df[
+            (users_df["username_lower"] == identifier) |
+            (users_df["email_lower"] == identifier)
         ]
-        if not user.empty and "admin" in str(user.iloc[0].get("role", "")).lower():
-            session["admin_id"] = int(user.iloc[0]["id"])
-            session["admin_name"] = user.iloc[0].get("full_name") or user.iloc[0].get("username")
-            session["role"] = user.iloc[0].get("role")
-            flash("Welcome Admin!", "success")
-            return redirect(url_for("admin.dashboard"))
+        if user_row.empty:
+            flash("Invalid username/email or password!", "error")
+            return redirect(url_for("admin.admin_login"))
 
-        flash("Invalid credentials or not an admin.", "danger")
+        user = user_row.iloc[0]
+        if str(user.get("password", "")) != password:
+            flash("Invalid username/email or password!", "error")
+            return redirect(url_for("admin.admin_login"))
+
+        role = str(user.get("role", "")).lower()
+        if "admin" not in role:
+            flash("You do not have admin access.", "error")
+            return redirect(url_for("admin.admin_login"))
+
+        # enforce single active session for this user (invalidate previous tokens)
+        try:
+            invalidate_session(int(user["id"]))
+        except Exception as e:
+            print("[admin_login] invalidate_session error:", e)
+
+        # create new token and save server-side record
+        # create new token and save locally (fast)
+        token = generate_session_token()
+        save_session_record({
+            "user_id": int(user["id"]),
+            "token": token,
+            "device_info": request.headers.get("User-Agent", "unknown"),
+            "is_exam_active": False
+        })
+
+        # set flask session for admin
+        session["admin_id"] = int(user["id"])
+        session["admin_name"] = user.get("username")
+        session["user_id"] = int(user["id"])
+        session["username"] = user.get("username")
+        session["full_name"] = user.get("full_name", user.get("username"))
+        session["token"] = token
+        session.permanent = True
+        print("[admin_login] flask session snapshot:", {k: session.get(k) for k in ['user_id','token','admin_id','admin_name']})
+
+        flash("Admin login successful!", "success")
+        return redirect(url_for("admin.dashboard"))
+
     return render_template("admin/admin_login.html")
+
+def _parse_max_attempts(raw):
+    if raw is None:
+        return None
+    s = str(raw).strip()
+    if s == "":
+        return None
+    if not s.isdigit():
+        raise ValueError("max_attempts must be a non-negative integer")
+    val = int(s)
+    if val < 0:
+        raise ValueError("max_attempts must be non-negative")
+    return val
 
 @admin_bp.route("/logout")
 def logout():
-    from main import home
-    home()
-    session.pop("admin_id", None)
-    session.pop("admin_name", None)
-    session.pop("role", None)
-    flash("Logged out successfully.", "info")
+    """Enhanced admin logout - completely clear session and invalidate tokens"""
+    uid = session.get("user_id")
+    tok = session.get("token")
+    
+    # Invalidate server-side session
+    if uid and tok:
+        try:
+            from sessions import invalidate_session, set_exam_active
+            set_exam_active(uid, tok, is_active=False)
+            invalidate_session(uid, token=tok)
+        except Exception as e:
+            print(f"[admin_logout] Error invalidating session: {e}")
+    
+    # Completely clear Flask session
+    session.clear()
+    
+    flash("Admin logout successful.", "success")
     return redirect(url_for("home"))
 
 # ========== Dashboard ==========
@@ -218,7 +284,7 @@ def subjects():
             "subject_folder_created_at": created_at
         }])
         updated_df = pd.concat([subjects_df, new_row], ignore_index=True)
-        save_csv_to_drive(sa, updated_df, SUBJECTS_FILE_ID)
+        safe_csv_save_with_retry(updated_df, 'subjects')
         clear_cache()
         flash(f"Subject '{subject_name}' created successfully.", "success")
         return redirect(url_for("admin.subjects"))
@@ -250,7 +316,7 @@ def edit_subject(subject_id):
         flash("Drive folder rename failed; CSV updated.", "warning")
 
     subjects_df.loc[subjects_df["id"] == subject_id, "subject_name"] = new_name
-    save_csv_to_drive(sa, subjects_df, SUBJECTS_FILE_ID)
+    safe_csv_save_with_retry(subjects_df, 'subjects')
     clear_cache()
     flash("Subject updated successfully.", "success")
     return redirect(url_for("admin.subjects"))
@@ -300,7 +366,7 @@ def delete_subject(subject_id):
                 print(f"❌ Fallback SA delete also failed for {folder_id}: {e_sa}")
 
     new_df = working_df[working_df["id"] != int(subject_id)].copy()
-    ok = save_csv_to_drive(service, new_df, SUBJECTS_FILE_ID)
+    ok = safe_csv_save_with_retry(new_df, 'subjects')
     if ok:
         clear_cache()
         flash("Subject deleted (Drive folder removed if permitted).", "info")
@@ -315,66 +381,120 @@ def delete_subject(subject_id):
 def exams():
     service = create_drive_service()
     exams_df = load_csv_from_drive(service, EXAMS_FILE_ID)
+    if exams_df is None:
+        exams_df = pd.DataFrame()
+    if "max_attempts" not in exams_df.columns:
+        exams_df["max_attempts"] = ""
     if request.method == "POST":
         form = request.form
-        new_id = exams_df["id"].max() + 1 if not exams_df.empty else 1
-        exams_df.loc[len(exams_df)] = [
-            new_id,
-            form["name"],
-            form["date"],
-            form["start_time"],
-            int(form["duration"]),
-            int(form["total_questions"]),
-            form["status"],
-            form["instructions"],
-            form["positive_marks"],
-            form["negative_marks"]
-        ]
-        save_csv_to_drive(service, exams_df, EXAMS_FILE_ID)
-        flash("Exam created successfully.", "success")
-        return redirect(url_for("admin.exams"))
+        try:
+            new_id = int(exams_df["id"].max()) + 1 if not exams_df.empty else 1
+        except Exception:
+            new_id = 1
+        try:
+            parsed_max = _parse_max_attempts(form.get("max_attempts", ""))
+        except ValueError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("admin.exams"))
+        row = {
+            "id": new_id,
+            "name": form.get("name", "").strip(),
+            "date": form.get("date", "").strip(),
+            "start_time": form.get("start_time", "").strip(),
+            "duration": int(form.get("duration") or 0),
+            "total_questions": int(form.get("total_questions") or 0),
+            "status": form.get("status", "").strip(),
+            "instructions": form.get("instructions", "").strip(),
+            "positive_marks": form.get("positive_marks", "").strip(),
+            "negative_marks": form.get("negative_marks", "").strip(),
+            "max_attempts": "" if parsed_max is None else str(parsed_max)
+        }
+        new_df = pd.concat([exams_df, pd.DataFrame([row])], ignore_index=True)
+        ok = safe_csv_save_with_retry(new_df, 'exams')
+        if ok:
+            clear_cache()
+            flash("Exam created successfully.", "success")
+            return redirect(url_for("admin.exams"))
+        else:
+            flash("Failed to save exam.", "danger")
+            return redirect(url_for("admin.exams"))
     return render_template("admin/exams.html", exams=exams_df.to_dict(orient="records"))
+
 
 @admin_bp.route("/exams/edit/<int:exam_id>", methods=["GET", "POST"])
 @admin_required
 def edit_exam(exam_id):
     service = create_drive_service()
     exams_df = load_csv_from_drive(service, EXAMS_FILE_ID)
+    if exams_df is None:
+        exams_df = pd.DataFrame()
+    if "max_attempts" not in exams_df.columns:
+        exams_df["max_attempts"] = ""
     exam = exams_df[exams_df["id"] == exam_id]
     if exam.empty:
         flash("Exam not found.", "danger")
         return redirect(url_for("admin.exams"))
-
     if request.method == "POST":
         form = request.form
+        try:
+            duration_val = int(form.get("duration") or 0)
+            total_q_val = int(form.get("total_questions") or 0)
+        except Exception:
+            flash("Duration and Total Questions must be integers.", "danger")
+            return redirect(url_for("admin.edit_exam", exam_id=exam_id))
+        try:
+            parsed_max = _parse_max_attempts(form.get("max_attempts", ""))
+        except ValueError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("admin.edit_exam", exam_id=exam_id))
         exams_df.loc[exams_df["id"] == exam_id, [
             "name", "date", "start_time", "duration",
             "total_questions", "status",
-            "instructions", "positive_marks", "negative_marks"
+            "instructions", "positive_marks", "negative_marks", "max_attempts"
         ]] = [
-            form["name"],
-            form["date"],
-            form["start_time"],
-            int(form["duration"]),
-            int(form["total_questions"]),
-            form["status"],
-            form["instructions"],
-            form["positive_marks"],
-            form["negative_marks"]
+            form.get("name", "").strip(),
+            form.get("date", "").strip(),
+            form.get("start_time", "").strip(),
+            duration_val,
+            total_q_val,
+            form.get("status", "").strip(),
+            form.get("instructions", "").strip(),
+            form.get("positive_marks", "").strip(),
+            form.get("negative_marks", "").strip(),
+            "" if parsed_max is None else str(parsed_max)
         ]
-        save_csv_to_drive(service, exams_df, EXAMS_FILE_ID)
-        flash("Exam updated successfully.", "success")
-        return redirect(url_for("admin.exams"))
+        ok = safe_csv_save_with_retry(exams_df, 'exams')
+        if ok:
+            clear_cache()
+            flash("Exam updated successfully.", "success")
+            return redirect(url_for("admin.exams"))
+        else:
+            flash("Failed to save exam changes.", "danger")
+            return redirect(url_for("admin.edit_exam", exam_id=exam_id))
     return render_template("admin/edit_exam.html", exam=exam.iloc[0].to_dict())
 
-@admin_bp.route("/exams/delete/<int:exam_id>")
+@admin_bp.route("/exams/delete/<int:exam_id>", methods=["GET"])
 @admin_required
 def delete_exam(exam_id):
     service = create_drive_service()
     exams_df = load_csv_from_drive(service, EXAMS_FILE_ID)
-    exams_df = exams_df[exams_df["id"] != exam_id]
-    save_csv_to_drive(service, exams_df, EXAMS_FILE_ID)
-    flash("Exam deleted.", "info")
+    if exams_df is None or exams_df.empty:
+        flash("Exam not found.", "danger")
+        return redirect(url_for("admin.exams"))
+    try:
+        ids = exams_df["id"].astype(int)
+    except Exception:
+        ids = exams_df["id"].apply(lambda x: int(str(x).strip()) if str(x).strip().isdigit() else None)
+    if int(exam_id) not in ids.tolist():
+        flash("Exam not found.", "danger")
+        return redirect(url_for("admin.exams"))
+    exams_df = exams_df[ids != int(exam_id)].reset_index(drop=True)
+    ok = safe_csv_save_with_retry(exams_df, "exams")
+    if ok:
+        clear_cache()
+        flash("Exam deleted successfully.", "success")
+    else:
+        flash("Failed to delete exam.", "danger")
     return redirect(url_for("admin.exams"))
 
 # ========== Questions helpers & CRUD ==========
@@ -486,7 +606,7 @@ def add_question():
         }
 
         new_df = pd.concat([qdf, pd.DataFrame([new_row])], ignore_index=True)
-        ok = save_csv_to_drive(sa, new_df, QUESTIONS_FILE_ID)
+        ok = safe_csv_save_with_retry(new_df, 'questions')
         if ok:
             clear_cache()
             flash("Question added successfully.", "success")
@@ -552,7 +672,7 @@ def delete_question(question_id):
     qdf = load_csv_from_drive(sa, QUESTIONS_FILE_ID)
     qdf = _ensure_questions_df(qdf)
     new_df = qdf[qdf["id"].astype(str) != str(question_id)].copy()
-    ok = save_csv_to_drive(sa, new_df, QUESTIONS_FILE_ID)
+    ok = safe_csv_save_with_retry(new_df, 'questions')
     if ok:
         clear_cache()
         flash("Question deleted.", "info")
@@ -583,7 +703,7 @@ def delete_multiple_questions():
         after_count = len(new_df)
         deleted_count = before_count - after_count
 
-        ok = save_csv_to_drive(sa, new_df, QUESTIONS_FILE_ID)
+        ok = safe_csv_save_with_retry(new_df, 'questions')
         if not ok:
             return jsonify({"success": False, "message": "Failed to save updated questions CSV"}), 500
 
@@ -789,7 +909,7 @@ def questions_batch_add():
             return jsonify({"success": False, "message": "No valid rows to add"}), 400
 
         appended = pd.concat([qdf, pd.DataFrame(new_rows)], ignore_index=True)
-        ok = save_csv_to_drive(sa, appended, QUESTIONS_FILE_ID)
+        ok = safe_csv_save_with_retry(appended, 'questions')
         if not ok:
             return jsonify({"success": False, "message": "Failed to save to Drive"}), 500
 
@@ -919,3 +1039,649 @@ def admin_oauth_callback():
         )
 
 # --- END: Web OAuth routes for admin ---
+
+@admin_bp.route("/attempts")
+@admin_required
+def attempts():
+    sa = create_drive_service()
+    users_df = load_csv_from_drive(sa, USERS_FILE_ID)
+    exams_df = load_csv_from_drive(sa, EXAMS_FILE_ID)
+    attempts_df = load_csv_from_drive(sa, EXAM_ATTEMPTS_FILE_ID)
+
+    if users_df is None: users_df = pd.DataFrame()
+    if exams_df is None: exams_df = pd.DataFrame()
+    if attempts_df is None: attempts_df = pd.DataFrame()
+
+    rows = []
+    for _, u in users_df.iterrows():
+        for _, e in exams_df.iterrows():
+            student_id, exam_id = str(u["id"]), str(e["id"])
+            user_attempts = attempts_df[(attempts_df["student_id"].astype(str)==student_id) &
+                                        (attempts_df["exam_id"].astype(str)==exam_id)]
+            used = len(user_attempts)
+            
+            # More robust max_attempts handling
+            max_att_raw = e.get("max_attempts", "")
+            
+            # Convert to string and strip
+            if pd.isna(max_att_raw):
+                max_att = ""
+            else:
+                max_att = str(max_att_raw).strip()
+            
+            # Calculate remaining
+            if max_att == "" or max_att == "0" or max_att.lower() == "nan":
+                remaining = "∞"
+                display_max = "∞"
+            else:
+                try:
+                    max_attempts_int = int(float(max_att))  # Handle case where it's stored as float string
+                    remaining = max(max_attempts_int - used, 0)
+                    display_max = str(max_attempts_int)
+                except (ValueError, TypeError):
+                    remaining = "?"
+                    display_max = max_att
+            
+            rows.append({
+                "student_id": student_id,
+                "username": u.get("username"),
+                "exam_id": exam_id,
+                "exam_name": e.get("name"),
+                "max_attempts": display_max,
+                "attempts_used": used,
+                "remaining": remaining
+            })
+    
+    return render_template("admin/attempts.html", rows=rows)
+
+
+@admin_bp.route("/attempts/modify", methods=["POST"])
+@admin_required
+def attempts_modify():
+    sa = create_drive_service()
+    payload = request.get_json(force=True)
+    student_id = str(payload.get("student_id"))
+    exam_id = str(payload.get("exam_id"))
+    action = payload.get("action")
+    amount = int(payload.get("amount") or 0)
+
+    attempts_df = load_csv_from_drive(sa, EXAM_ATTEMPTS_FILE_ID)
+    if attempts_df is None: 
+        attempts_df = pd.DataFrame(columns=["id","student_id","exam_id","attempt_number","status","start_time","end_time"])
+
+    mask = (attempts_df["student_id"].astype(str)==student_id) & (attempts_df["exam_id"].astype(str)==exam_id)
+    current = attempts_df[mask]
+    used = len(current)
+
+    if action == "reset":
+        attempts_df = attempts_df[~mask]
+    elif action == "decrease":
+        drop_ids = current.tail(amount)["id"].tolist()
+        attempts_df = attempts_df[~attempts_df["id"].isin(drop_ids)]
+    elif action == "increase":
+        start_id = (attempts_df["id"].astype(int).max() + 1) if not attempts_df.empty else 1
+        for i in range(amount):
+            attempts_df = pd.concat([attempts_df, pd.DataFrame([{
+                "id": start_id+i,
+                "student_id": student_id,
+                "exam_id": exam_id,
+                "attempt_number": used+i+1,
+                "status": "manual_add",
+                "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "end_time": ""
+            }])], ignore_index=True)
+
+    # Use save_csv_to_drive directly instead of safe_csv_save_with_retry
+    ok = save_csv_to_drive(sa, attempts_df, EXAM_ATTEMPTS_FILE_ID)
+    if ok:
+        clear_cache()
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 500
+
+
+
+
+@admin_bp.route("/requests")
+@admin_required
+def requests_dashboard():
+    """Requests dashboard with new and history tabs"""
+    return render_template("admin/requests.html")
+
+@admin_bp.route("/requests/new")
+@admin_required
+def new_requests():
+    """View new (pending) access requests"""
+    try:
+        service = create_drive_service()
+        
+        # Load requests data
+        requests_df = load_csv_from_drive(service, REQUESTS_RAISED_FILE_ID)
+        if requests_df is None:
+            requests_df = pd.DataFrame(columns=[
+                'request_id', 'username', 'email', 'current_access',
+                'requested_access', 'request_date', 'request_status', 'reason'
+            ])
+        
+        # Filter pending requests
+        if not requests_df.empty:
+            pending_requests = requests_df[
+                requests_df['request_status'].astype(str).str.lower() == 'pending'
+            ].sort_values('request_date', ascending=False)
+        else:
+            pending_requests = pd.DataFrame()
+        
+        # Convert to list of dictionaries for template
+        requests_list = []
+        for _, row in pending_requests.iterrows():
+            requests_list.append({
+                'request_id': int(row['request_id']),
+                'username': row['username'],
+                'email': row['email'],
+                'current_access': row['current_access'],
+                'requested_access': row['requested_access'],
+                'request_date': row['request_date'],
+                'status': row['request_status']
+            })
+        
+        return render_template("admin/new_requests.html", requests=requests_list)
+        
+    except Exception as e:
+        print(f"Error loading new requests: {e}")
+        flash("Error loading requests data.", "error")
+        return render_template("admin/new_requests.html", requests=[])
+
+@admin_bp.route("/requests/history")
+@admin_required
+def requests_history():
+    """View completed/denied requests history"""
+    try:
+        service = create_drive_service()
+        
+        # Load requests data
+        requests_df = load_csv_from_drive(service, REQUESTS_RAISED_FILE_ID)
+        if requests_df is None:
+            requests_df = pd.DataFrame()
+        
+        # Filter completed/denied requests
+        history_requests = []
+        if not requests_df.empty:
+            history_df = requests_df[
+                requests_df['request_status'].astype(str).str.lower().isin(['completed', 'denied'])
+            ].sort_values('request_date', ascending=False)
+            
+            for _, row in history_df.iterrows():
+                history_requests.append({
+                    'request_id': int(row['request_id']),
+                    'username': row['username'],
+                    'email': row['email'],
+                    'current_access': row['current_access'],
+                    'requested_access': row['requested_access'],
+                    'request_date': row['request_date'],
+                    'status': row['request_status'],
+                    'reason': row.get('reason', ''),
+                    'processed_by': row.get('processed_by', 'Admin'),
+                    'processed_date': row.get('processed_date', '')
+                })
+        
+        return render_template("admin/requests_history.html", requests=history_requests)
+        
+    except Exception as e:
+        print(f"Error loading requests history: {e}")
+        flash("Error loading requests history.", "error")
+        return render_template("admin/requests_history.html", requests=[])
+
+@admin_bp.route("/requests/approve/<int:request_id>", methods=["POST"])
+@admin_required
+def approve_request(request_id):
+    """Approve an access request"""
+    try:
+        data = request.get_json()
+        approved_access = data.get('approved_access')
+        
+        if not approved_access:
+            return jsonify({
+                'success': False,
+                'message': 'Please select an access level to approve'
+            }), 400
+        
+        service = create_drive_service()
+        
+        # Load requests data
+        requests_df = load_csv_from_drive(service, REQUESTS_RAISED_FILE_ID)
+        if requests_df is None or requests_df.empty:
+            return jsonify({
+                'success': False,
+                'message': 'No requests found'
+            }), 404
+        
+        # Find the specific request
+        request_row = requests_df[
+            (requests_df['request_id'].astype(int) == request_id) &
+            (requests_df['request_status'].astype(str).str.lower() == 'pending')
+        ]
+        
+        if request_row.empty:
+            return jsonify({
+                'success': False,
+                'message': 'Request not found or already processed'
+            }), 404
+        
+        request_data = request_row.iloc[0]
+        username = request_data['username']
+        email = request_data['email']
+        
+        # Load users data and update access
+        users_df = load_csv_from_drive(service, USERS_FILE_ID)
+        if users_df is None or users_df.empty:
+            return jsonify({
+                'success': False,
+                'message': 'Users database unavailable'
+            }), 500
+        
+        # Find and update user
+        users_df['username_lower'] = users_df['username'].astype(str).str.strip().str.lower()
+        users_df['email_lower'] = users_df['email'].astype(str).str.strip().str.lower()
+        
+        user_mask = (
+            (users_df['username_lower'] == username.lower()) &
+            (users_df['email_lower'] == email.lower())
+        )
+        
+        if not user_mask.any():
+            return jsonify({
+                'success': False,
+                'message': 'User not found in database'
+            }), 404
+        
+        # Update user access
+        users_df.loc[user_mask, 'role'] = approved_access
+        users_df.loc[user_mask, 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Update request status
+        request_mask = requests_df['request_id'].astype(int) == request_id
+        requests_df.loc[request_mask, 'request_status'] = 'completed'
+        requests_df.loc[request_mask, 'reason'] = f'Approved: {approved_access}'
+        requests_df.loc[request_mask, 'processed_by'] = session.get('admin_name', 'Admin')
+        requests_df.loc[request_mask, 'processed_date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Save both files
+        users_success = safe_csv_save_with_retry(users_df, 'users')
+        requests_success = safe_csv_save_with_retry(requests_df, 'requests_raised')
+        
+        if users_success and requests_success:
+            clear_cache()
+            return jsonify({
+                'success': True,
+                'message': f'Request approved successfully. User {username} now has {approved_access} access.'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Error saving approval. Please try again.'
+            }), 500
+        
+    except Exception as e:
+        print(f"Error approving request: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': 'System error occurred'
+        }), 500
+
+@admin_bp.route("/requests/deny/<int:request_id>", methods=["POST"])
+@admin_required
+def deny_request(request_id):
+    """Deny an access request with reason"""
+    try:
+        data = request.get_json()
+        denial_reason = data.get('reason', '').strip()
+        
+        if not denial_reason:
+            return jsonify({
+                'success': False,
+                'message': 'Please provide a reason for denial'
+            }), 400
+        
+        service = create_drive_service()
+        
+        # Load requests data
+        requests_df = load_csv_from_drive(service, REQUESTS_RAISED_FILE_ID)
+        if requests_df is None or requests_df.empty:
+            return jsonify({
+                'success': False,
+                'message': 'No requests found'
+            }), 404
+        
+        # Find the specific request
+        request_row = requests_df[
+            (requests_df['request_id'].astype(int) == request_id) &
+            (requests_df['request_status'].astype(str).str.lower() == 'pending')
+        ]
+        
+        if request_row.empty:
+            return jsonify({
+                'success': False,
+                'message': 'Request not found or already processed'
+            }), 404
+        
+        # Update request status
+        request_mask = requests_df['request_id'].astype(int) == request_id
+        requests_df.loc[request_mask, 'request_status'] = 'denied'
+        requests_df.loc[request_mask, 'reason'] = denial_reason
+        requests_df.loc[request_mask, 'processed_by'] = session.get('admin_name', 'Admin')
+        requests_df.loc[request_mask, 'processed_date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Save requests file
+        success = safe_csv_save_with_retry(requests_df, 'requests_raised')
+        
+        if success:
+            clear_cache()
+            return jsonify({
+                'success': True,
+                'message': f'Request denied successfully.'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Error saving denial. Please try again.'
+            }), 500
+        
+    except Exception as e:
+        print(f"Error denying request: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': 'System error occurred'
+        }), 500
+
+@admin_bp.route("/api/requests/stats")
+@admin_required
+def api_requests_stats():
+    """API endpoint for request statistics"""
+    try:
+        service = create_drive_service()
+        
+        # Load requests data
+        requests_df = load_csv_from_drive(service, REQUESTS_RAISED_FILE_ID)
+        if requests_df is None or requests_df.empty:
+            return jsonify({
+                'pending': 0,
+                'completed': 0,
+                'denied': 0,
+                'total': 0
+            })
+        
+        # Count by status
+        status_counts = requests_df['request_status'].astype(str).str.lower().value_counts()
+        
+        return jsonify({
+            'pending': int(status_counts.get('pending', 0)),
+            'completed': int(status_counts.get('completed', 0)),
+            'denied': int(status_counts.get('denied', 0)),
+            'total': len(requests_df)
+        })
+        
+    except Exception as e:
+        print(f"Error getting request stats: {e}")
+        return jsonify({
+            'pending': 0,
+            'completed': 0,
+            'denied': 0,
+            'total': 0
+        })
+
+
+
+
+# Add these routes to your admin.py file
+
+@admin_bp.route("/users/manage")
+@admin_required
+def users_manage():
+    """View users management page"""
+    try:
+        service = create_drive_service()
+        
+        # Load users data
+        users_df = load_csv_from_drive(service, USERS_FILE_ID)
+        if users_df is None:
+            users_df = pd.DataFrame(columns=[
+                'id', 'username', 'email', 'full_name', 'role', 'created_at', 'updated_at'
+            ])
+        
+        # Prepare users data (exclude sensitive information)
+        users_list = []
+        if not users_df.empty:
+            for _, row in users_df.iterrows():
+                users_list.append({
+                    'id': int(row['id']),
+                    'username': row.get('username', ''),
+                    'email': row.get('email', ''),
+                    'full_name': row.get('full_name', ''),
+                    'role': row.get('role', 'user'),
+                    'created_at': row.get('created_at', ''),
+                    'updated_at': row.get('updated_at', '')
+                })
+        
+        # Sort by username
+        users_list.sort(key=lambda x: x['username'].lower())
+        
+        return render_template("admin/users_manage.html", users=users_list)
+        
+    except Exception as e:
+        print(f"Error loading users management: {e}")
+        flash("Error loading users data.", "error")
+        return render_template("admin/users_manage.html", users=[])
+
+@admin_bp.route("/users/update-role", methods=["POST"])
+@admin_required
+def update_user_role():
+    """Update user role"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        new_role = data.get('new_role', '').strip()
+        
+        if not user_id or not new_role:
+            return jsonify({
+                'success': False,
+                'message': 'User ID and role are required'
+            }), 400
+        
+        # Validate role
+        valid_roles = ['user', 'admin', 'user,admin']
+        if new_role not in valid_roles:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid role selected'
+            }), 400
+        
+        service = create_drive_service()
+        
+        # Load users data
+        users_df = load_csv_from_drive(service, USERS_FILE_ID)
+        if users_df is None or users_df.empty:
+            return jsonify({
+                'success': False,
+                'message': 'Users database unavailable'
+            }), 500
+        
+        # Find user
+        user_mask = users_df['id'].astype(str) == str(user_id)
+        if not user_mask.any():
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+        
+        # Get current user info
+        user_row = users_df[user_mask].iloc[0]
+        username = user_row['username']
+        current_role = user_row.get('role', 'user')
+        
+        # Check if role actually changed
+        if current_role == new_role:
+            return jsonify({
+                'success': True,
+                'message': f'User {username} already has {new_role} role',
+                'no_change': True
+            })
+        
+        # Update user role
+        users_df.loc[user_mask, 'role'] = new_role
+        users_df.loc[user_mask, 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Save to CSV
+        success = safe_csv_save_with_retry(users_df, 'users')
+        
+        if success:
+            clear_cache()
+            return jsonify({
+                'success': True,
+                'message': f'Successfully updated {username} role from {current_role} to {new_role}',
+                'user_id': user_id,
+                'new_role': new_role,
+                'username': username
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Error saving role update. Please try again.'
+            }), 500
+        
+    except Exception as e:
+        print(f"Error updating user role: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': 'System error occurred'
+        }), 500
+
+@admin_bp.route("/users/bulk-update-roles", methods=["POST"])
+@admin_required
+def bulk_update_user_roles():
+    """Bulk update multiple user roles"""
+    try:
+        data = request.get_json()
+        updates = data.get('updates', [])
+        
+        if not updates:
+            return jsonify({
+                'success': False,
+                'message': 'No updates provided'
+            }), 400
+        
+        service = create_drive_service()
+        users_df = load_csv_from_drive(service, USERS_FILE_ID)
+        
+        if users_df is None or users_df.empty:
+            return jsonify({
+                'success': False,
+                'message': 'Users database unavailable'
+            }), 500
+        
+        valid_roles = ['user', 'admin', 'user,admin']
+        updated_count = 0
+        errors = []
+        
+        for update in updates:
+            user_id = update.get('user_id')
+            new_role = update.get('new_role', '').strip()
+            
+            if not user_id or not new_role:
+                errors.append(f'Invalid update data for user {user_id}')
+                continue
+                
+            if new_role not in valid_roles:
+                errors.append(f'Invalid role {new_role} for user {user_id}')
+                continue
+            
+            user_mask = users_df['id'].astype(str) == str(user_id)
+            if not user_mask.any():
+                errors.append(f'User {user_id} not found')
+                continue
+            
+            # Update role
+            users_df.loc[user_mask, 'role'] = new_role
+            users_df.loc[user_mask, 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            updated_count += 1
+        
+        if updated_count > 0:
+            success = safe_csv_save_with_retry(users_df, 'users')
+            if success:
+                clear_cache()
+                message = f'Successfully updated {updated_count} user roles'
+                if errors:
+                    message += f' ({len(errors)} errors occurred)'
+                
+                return jsonify({
+                    'success': True,
+                    'message': message,
+                    'updated_count': updated_count,
+                    'errors': errors
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Error saving bulk updates'
+                }), 500
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'No valid updates to apply',
+                'errors': errors
+            }), 400
+        
+    except Exception as e:
+        print(f"Error in bulk update: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'System error occurred'
+        }), 500
+
+@admin_bp.route("/api/users/stats")
+@admin_required
+def api_users_stats():
+    """API endpoint for user statistics"""
+    try:
+        service = create_drive_service()
+        users_df = load_csv_from_drive(service, USERS_FILE_ID)
+        
+        if users_df is None or users_df.empty:
+            return jsonify({
+                'total_users': 0,
+                'user_role': 0,
+                'admin_role': 0,
+                'both_roles': 0
+            })
+        
+        # Count by role
+        role_counts = {'user': 0, 'admin': 0, 'both': 0}
+        
+        for _, row in users_df.iterrows():
+            role = str(row.get('role', 'user')).lower().strip()
+            if ',' in role or 'user' in role and 'admin' in role:
+                role_counts['both'] += 1
+            elif 'admin' in role:
+                role_counts['admin'] += 1
+            else:
+                role_counts['user'] += 1
+        
+        return jsonify({
+            'total_users': len(users_df),
+            'user_role': role_counts['user'],
+            'admin_role': role_counts['admin'],
+            'both_roles': role_counts['both']
+        })
+        
+    except Exception as e:
+        print(f"Error getting user stats: {e}")
+        return jsonify({
+            'total_users': 0,
+            'user_role': 0,
+            'admin_role': 0,
+            'both_roles': 0
+        })        
