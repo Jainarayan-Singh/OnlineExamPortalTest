@@ -1,0 +1,637 @@
+{% extends "admin/admin_base.html" %}
+{% block title %}Attempts Management{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+  
+  .main-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 20px;
+    padding: 30px;
+  }
+  
+  .page-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    text-align: center;
+  }
+  
+  .page-title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+  }
+  
+  .controls-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+  }
+  
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+  }
+  
+  .filter-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+  }
+  
+  .form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+  }
+  
+  .form-control:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+  }
+  
+  .btn-secondary {
+    background: #6c757d;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+  }
+  
+  .table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+  
+  .table {
+    margin-bottom: 0;
+  }
+  
+  .table thead th {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+    color: white;
+    border: none;
+    padding: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+  
+  .table tbody tr {
+    transition: all 0.3s ease;
+  }
+  
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+  }
+  
+  .table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+    border-color: #e9ecef;
+  }
+  
+  .action-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 2px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .btn-success {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+  }
+  
+  .btn-warning {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+  }
+  
+  .btn-info {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+  }
+  
+  .action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  .pagination-container {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+  }
+  
+  .pagination-info {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  
+  .pagination-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+  }
+  
+  .modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+  }
+  
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .modal-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+  }
+  
+  .modal-title {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  
+  .modal-body {
+    margin-bottom: 25px;
+  }
+  
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+    min-width: 300px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    animation: toastSlideIn 0.3s ease-out;
+  }
+  
+  @keyframes toastSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .toast-success {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  }
+  
+  .toast-error {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  }
+  
+  .close-btn {
+    float: right;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 15px;
+  }
+  
+  .user-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  
+  .exam-badge {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  
+  .attempts-badge {
+    background: #fff3e0;
+    color: #f57c00;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+</style>
+
+<div class="main-container">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fas fa-list-ol me-2"></i>Attempts Management</h1>
+  </div>
+
+  <div class="controls-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label class="filter-label">User Filter</label>
+        <input type="text" id="userFilter" class="form-control" placeholder="Search users...">
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Exam Filter</label>
+        <input type="text" id="examFilter" class="form-control" placeholder="Search exams...">
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Status Filter</label>
+        <select id="statusFilter" class="form-control">
+          <option value="">All Status</option>
+          <option value="unlimited">Unlimited</option>
+          <option value="available">Has Remaining</option>
+          <option value="exhausted">No Remaining</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Items Per Page</label>
+        <select id="itemsPerPage" class="form-control">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="filter-row">
+      <button class="btn btn-primary" onclick="applyFilters()">
+        <i class="fas fa-filter me-2"></i>Apply Filters
+      </button>
+      <button class="btn btn-secondary" onclick="clearFilters()">
+        <i class="fas fa-times me-2"></i>Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="table table-striped" id="attemptsTable">
+      <thead>
+        <tr>
+          <th>USER</th>
+          <th>EXAM</th>
+          <th>MAX ATTEMPTS</th>
+          <th>USED</th>
+          <th>REMAINING</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        {% for r in rows %}
+        <tr data-user="{{ r.username|lower }}" data-exam="{{ r.exam_name|lower }}" data-status="{% if r.remaining == '∞' %}unlimited{% elif r.remaining == 0 %}exhausted{% else %}available{% endif %}">
+          <td>
+            <div class="user-badge">{{ r.username }}</div>
+            <small class="text-muted d-block mt-1">ID: {{ r.student_id }}</small>
+          </td>
+          <td>
+            <div class="exam-badge">{{ r.exam_name }}</div>
+            <small class="text-muted d-block mt-1">ID: {{ r.exam_id }}</small>
+          </td>
+          <td><strong>{{ r.max_attempts }}</strong></td>
+          <td><span class="attempts-badge">{{ r.attempts_used }}</span></td>
+          <td><strong>{{ r.remaining }}</strong></td>
+          <td>
+            <button class="action-btn btn-success" onclick="openModal('reset', '{{ r.student_id }}', '{{ r.exam_id }}', '{{ r.username }}', '{{ r.exam_name }}')">
+              <i class="fas fa-redo me-1"></i>Reset
+            </button>
+            <button class="action-btn btn-info" onclick="openModal('increase', '{{ r.student_id }}', '{{ r.exam_id }}', '{{ r.username }}', '{{ r.exam_name }}')">
+              <i class="fas fa-plus me-1"></i>+1
+            </button>
+            <button class="action-btn btn-warning" onclick="openModal('decrease', '{{ r.student_id }}', '{{ r.exam_id }}', '{{ r.username }}', '{{ r.exam_name }}')">
+              <i class="fas fa-minus me-1"></i>-1
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+    <div class="pagination-container">
+      <div class="pagination-info">
+        <span id="paginationInfo">Showing 1-25 of {{ rows|length }} entries</span>
+      </div>
+      <div class="pagination-controls">
+        <button class="btn btn-secondary" id="prevBtn" onclick="changePage(-1)">
+          <i class="fas fa-chevron-left me-1"></i>Previous
+        </button>
+        <span id="pageInfo" class="mx-3">Page 1</span>
+        <button class="btn btn-secondary" id="nextBtn" onclick="changePage(1)">
+          Next<i class="fas fa-chevron-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Action Modal -->
+<div id="actionModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle">Confirm Action</h2>
+    </div>
+    <div class="modal-body">
+      <p id="modalMessage">Are you sure you want to perform this action?</p>
+      <div id="amountInput" style="display: none; margin-top: 15px;">
+        <label for="amount" class="form-label">Amount:</label>
+        <input type="number" id="amount" class="form-control" min="1" value="1">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="confirmBtn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let filteredRows = [];
+let currentPage = 1;
+let itemsPerPage = 10;
+let currentAction = null;
+let currentStudentId = null;
+let currentExamId = null;
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+  filteredRows = Array.from(document.querySelectorAll('#tableBody tr'));
+  updatePagination();
+});
+
+// Filter functions
+function applyFilters() {
+  const userFilter = document.getElementById('userFilter').value.toLowerCase();
+  const examFilter = document.getElementById('examFilter').value.toLowerCase();
+  const statusFilter = document.getElementById('statusFilter').value;
+  const itemsPerPageValue = document.getElementById('itemsPerPage').value;
+  
+  const allRows = Array.from(document.querySelectorAll('#tableBody tr'));
+  
+  filteredRows = allRows.filter(row => {
+    const userData = row.dataset.user;
+    const examData = row.dataset.exam;
+    const statusData = row.dataset.status;
+    
+    const userMatch = !userFilter || userData.includes(userFilter);
+    const examMatch = !examFilter || examData.includes(examFilter);
+    const statusMatch = !statusFilter || statusData === statusFilter;
+    
+    return userMatch && examMatch && statusMatch;
+  });
+  
+  itemsPerPage = itemsPerPageValue === 'all' ? filteredRows.length : parseInt(itemsPerPageValue);
+  currentPage = 1;
+  updatePagination();
+  showToast('Filters applied successfully!', 'success');
+}
+
+function clearFilters() {
+  document.getElementById('userFilter').value = '';
+  document.getElementById('examFilter').value = '';
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('itemsPerPage').value = '10';
+  
+  filteredRows = Array.from(document.querySelectorAll('#tableBody tr'));
+  itemsPerPage = 10;
+  currentPage = 1;
+  updatePagination();
+  showToast('Filters cleared!', 'success');
+}
+
+// Pagination functions
+function updatePagination() {
+  const totalItems = filteredRows.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+  
+  // Hide all rows first
+  document.querySelectorAll('#tableBody tr').forEach(row => row.style.display = 'none');
+  
+  // Show only the current page rows
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+  
+  // Update pagination info
+  document.getElementById('paginationInfo').textContent = 
+    `Showing ${startItem}-${endItem} of ${totalItems} entries`;
+  document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+  
+  // Update button states
+  document.getElementById('prevBtn').disabled = currentPage === 1;
+  document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+}
+
+function changePage(direction) {
+  const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+  const newPage = currentPage + direction;
+  
+  if (newPage >= 1 && newPage <= totalPages) {
+    currentPage = newPage;
+    updatePagination();
+  }
+}
+
+// Modal functions
+function openModal(action, studentId, examId, username, examName) {
+  currentAction = action;
+  currentStudentId = studentId;
+  currentExamId = examId;
+  
+  const modal = document.getElementById('actionModal');
+  const title = document.getElementById('modalTitle');
+  const message = document.getElementById('modalMessage');
+  const amountInput = document.getElementById('amountInput');
+  const confirmBtn = document.getElementById('confirmBtn');
+  
+  switch(action) {
+    case 'reset':
+      title.textContent = 'Reset Attempts';
+      message.innerHTML = `Are you sure you want to <strong>reset all attempts</strong> for:<br>
+                          <strong>User:</strong> ${username}<br>
+                          <strong>Exam:</strong> ${examName}`;
+      amountInput.style.display = 'none';
+      confirmBtn.className = 'btn btn-danger';
+      confirmBtn.innerHTML = '<i class="fas fa-redo me-1"></i>Reset';
+      break;
+      
+    case 'increase':
+      title.textContent = 'Increase Attempts';
+      message.innerHTML = `Increase attempts for:<br>
+                          <strong>User:</strong> ${username}<br>
+                          <strong>Exam:</strong> ${examName}`;
+      amountInput.style.display = 'block';
+      document.getElementById('amount').value = 1;
+      confirmBtn.className = 'btn btn-success';
+      confirmBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Increase';
+      break;
+      
+    case 'decrease':
+      title.textContent = 'Decrease Attempts';
+      message.innerHTML = `Decrease attempts for:<br>
+                          <strong>User:</strong> ${username}<br>
+                          <strong>Exam:</strong> ${examName}`;
+      amountInput.style.display = 'block';
+      document.getElementById('amount').value = 1;
+      confirmBtn.className = 'btn btn-warning';
+      confirmBtn.innerHTML = '<i class="fas fa-minus me-1"></i>Decrease';
+      break;
+  }
+  
+  modal.style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('actionModal').style.display = 'none';
+}
+
+async function confirmAction() {
+  const amount = document.getElementById('amount').value || 1;
+  
+  try {
+    const response = await fetch("{{ url_for('admin.attempts_modify') }}", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        student_id: currentStudentId,
+        exam_id: currentExamId,
+        action: currentAction,
+        amount: parseInt(amount)
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(`Action completed successfully!`, 'success');
+      closeModal();
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast('Action failed. Please try again.', 'error');
+    }
+  } catch (error) {
+    showToast('Network error. Please try again.', 'error');
+    console.error('Error:', error);
+  }
+}
+
+// Toast notification function
+function showToast(message, type) {
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    ${message}
+    <span class="close-btn" onclick="this.parentElement.remove()">&times;</span>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    if (toast.parentElement) {
+      toast.remove();
+    }
+  }, 4000);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById('actionModal');
+  if (event.target === modal) {
+    closeModal();
+  }
+}
+</script>
+{% endblock %}
