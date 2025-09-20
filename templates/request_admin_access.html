@@ -1,0 +1,1153 @@
+{% extends "base.html" %}
+
+{% block title %}Request Admin Access - ExamPortal{% endblock %}
+
+{% block content %}
+<!-- Floating Particles Background -->
+<div class="particles-container">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<!-- Top Navigation -->
+<div class="top-navigation-minimal">
+    <a href="{{ url_for('home') }}" class="minimal-btn" title="Home">
+        <i class="fas fa-home"></i>
+        <span class="btn-label">Home</span>
+    </a>
+    <a href="{{ url_for('login') }}" class="minimal-btn" title="Login">
+        <i class="fas fa-sign-in-alt"></i>
+        <span class="btn-label">Login</span>
+    </a>
+</div>
+
+<!-- Main Container -->
+<div class="request-wrapper">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-xl-8 col-lg-10 col-md-12">
+                <div class="request-container">
+                    <!-- Header Section -->
+                    <div class="request-header">
+                        <div class="logo-section">
+                            <div class="logo-icon">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <h1 class="brand-name">Request Admin Access</h1>
+                        </div>
+                        <p class="welcome-subtitle">Submit a request for additional system access</p>
+                    </div>
+
+                    <!-- Step 1: User Validation -->
+                    <div id="step1" class="step-section">
+                        <h3 class="step-title">
+                            <i class="fas fa-user-check me-2"></i>Step 1: User Validation
+                        </h3>
+                        <form id="validateUserForm" class="validation-form">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Username</label>
+                                    <div class="input-wrapper">
+                                        <div class="input-icon">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <input type="text" class="form-input" id="username" name="username" 
+                                               placeholder="Enter your username" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email Address</label>
+                                    <div class="input-wrapper">
+                                        <div class="input-icon">
+                                            <i class="fas fa-envelope"></i>
+                                        </div>
+                                        <input type="email" class="form-input" id="email" name="email" 
+                                               placeholder="Enter your email address" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="submit" class="btn btn-primary validate-btn">
+                                    <i class="fas fa-search me-2"></i>Validate User
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: User Details & Requests (Hidden initially) -->
+                    <div id="step2" class="step-section" style="display: none;">
+                        <h3 class="step-title">
+                            <i class="fas fa-info-circle me-2"></i>Step 2: Current Status & Request History
+                        </h3>
+                        
+                        <!-- User Details Card -->
+                        <div class="user-details-card">
+                            <h4 class="card-title">User Information</h4>
+                            <div class="table-responsive">
+                                <table class="table user-details-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Current Access</th>
+                                            <th>Any Requests Raised?</th>
+                                            <th>Latest Request</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="userDetailsTableBody">
+                                        <!-- Will be populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Request History (if any) -->
+                        <div id="requestHistorySection" class="request-history-section" style="display: none;">
+                            <h4 class="card-title">Request History</h4>
+                            <div class="table-responsive">
+                                <table class="table request-history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Request ID</th>
+                                            <th>Requested Access</th>
+                                            <th>Request Date</th>
+                                            <th>Status</th>
+                                            <th>Reason/Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="requestHistoryTableBody">
+                                        <!-- Will be populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- New Request Section -->
+                        <div id="newRequestSection" class="new-request-section">
+                            <h4 class="card-title">Raise New Request</h4>
+                            <div id="requestFormContainer">
+                                <!-- Will be populated based on user's current access -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="loadingState" class="loading-state" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Processing your request...</p>
+                    </div>
+
+                    <!-- Success/Error Messages -->
+                    <div id="alertContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Global Styles - Modern Dark Theme */
+body {
+  background: linear-gradient(135deg, #0c0c23 0%, #1a1a2e 50%, #16213e 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+  color: #ffffff;
+}
+
+/* Enhanced Particles Background */
+.particles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: linear-gradient(45deg, #00c0ee, #748df0);
+  border-radius: 50%;
+  animation: float 12s ease-in-out infinite;
+  opacity: 0.28; /* reduced glow */
+  filter: blur(0.6px);
+}
+
+.particle:nth-child(1)  { width: 8px;  height: 8px;  top: 10%; left: 15%; animation-delay: 0s; }
+.particle:nth-child(2)  { width: 6px;  height: 6px;  top: 70%; left: 85%; animation-delay: 2s; }
+.particle:nth-child(3)  { width:10px;  height:10px;  top: 30%; left:  5%; animation-delay: 4s; }
+.particle:nth-child(4)  { width: 7px;  height: 7px;  top: 80%; left: 20%; animation-delay: 6s; }
+.particle:nth-child(5)  { width: 9px;  height: 9px;  top: 20%; left: 90%; animation-delay: 8s; }
+.particle:nth-child(6)  { width: 5px;  height: 5px;  top: 60%; left: 70%; animation-delay:10s; }
+.particle:nth-child(7)  { width: 8px;  height: 8px;  top: 45%; left: 25%; animation-delay: 1s; }
+.particle:nth-child(8)  { width: 6px;  height: 6px;  top: 85%; left: 60%; animation-delay: 3s; }
+
+/* Modern Top Navigation */
+.top-navigation-minimal {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  z-index: 1000;
+  display: flex;
+  gap: 15px;
+}
+
+.minimal-btn {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px);
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 50%;
+  border: 1px solid rgba(91,115,255,0.18);
+  box-shadow: 0 8px 24px rgba(0,130,200,0.08);
+  transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+.minimal-btn:hover {
+  color: #7fd7ff;
+  transform: translateY(-3px) scale(1.03);
+  border-color: rgba(0,160,220,0.28);
+  box-shadow: 0 12px 30px rgba(0,140,210,0.12);
+}
+
+.btn-label {
+  position: absolute;
+  right: 75px;
+  background: linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+  border: 1px solid rgba(91,115,255,0.12);
+}
+
+.minimal-btn:hover .btn-label {
+  opacity: 1;
+}
+
+/* Modern Request Wrapper */
+.request-wrapper {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 60px 0;
+}
+
+/* Enhanced Request Container */
+.request-container {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(91,115,255,0.12);
+  border-radius: 28px;
+  padding: 44px;
+  box-shadow:
+    0 18px 48px rgba(0,0,0,0.36),
+    0 0 0 1px rgba(255,255,255,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.request-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(0,180,255,0.03) 0%, rgba(91,115,255,0.04) 100%);
+  border-radius: 28px;
+  z-index: -1;
+}
+
+/* Modern Header Section */
+.request-header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid rgba(91,115,255,0.08);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.logo-icon {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg,#50bfff 0%,#7a86f7 100%);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  box-shadow: 0 10px 30px rgba(60,140,220,0.12);
+}
+
+.brand-name {
+  font-size: 2.1rem;
+  font-weight: 800;
+  background: linear-gradient(135deg,#ffffff 0%,#7ecbff 48%,#7a86f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.welcome-subtitle {
+  color: rgba(255,255,255,0.82);
+  font-size: 1.02rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Modern Step Sections */
+.step-section {
+  margin-bottom: 40px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 20px;
+  padding: 32px;
+  border: 1px solid rgba(91,115,255,0.08);
+  backdrop-filter: blur(14px);
+}
+
+.step-title {
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.step-title i {
+  color: #7ecbff;
+  margin-right: 12px;
+  font-size: 1.25em;
+}
+
+/* Enhanced Form Elements */
+.form-label, .form-label-improved {
+  display: block;
+  color: #f7f9fb !important;
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-size: 0.98rem;
+  letter-spacing: 0.01em;
+}
+
+.input-wrapper {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(126,203,255,0.9);
+  z-index: 2;
+  font-size: 1.05rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 16px 18px 16px 52px;
+  background: rgba(18,20,28,0.78); /* distinct, less bright */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.06); /* thinner border */
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 500;
+  transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: rgba(255,255,255,0.36);
+  font-weight: 400;
+}
+
+.form-input:focus {
+  border-color: rgba(78,168,255,0.9);
+  box-shadow: 0 0 0 3px rgba(78,168,255,0.07);
+  background: rgba(20,22,30,0.9);
+}
+
+/* Modern Buttons */
+.btn {
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.98rem;
+  border: none;
+  transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  transition: left 0.6s;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg,#50bfff 0%,#7a86f7 100%);
+  color: white;
+  box-shadow: 0 8px 28px rgba(78,160,220,0.08);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 36px rgba(78,160,220,0.10);
+  color: white;
+}
+
+.btn-success, .btn-success-improved {
+  background: linear-gradient(135deg,#36b36a 0%,#2fa25a 100%) !important;
+  color: white !important;
+  box-shadow: 0 8px 28px rgba(47,162,90,0.08);
+  border: none !important;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.98rem;
+  transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+
+.btn-success:hover, .btn-success-improved:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 12px 36px rgba(47,162,90,0.10) !important;
+  background: linear-gradient(135deg,#2fa25a 0%,#278f4d 100%) !important;
+  color: white !important;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Modern Tables */
+.table-responsive {
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.02);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(91,115,255,0.06);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.table {
+  color: #ffffff;
+  margin: 0;
+  font-weight: 500;
+}
+
+.table thead th {
+  background: linear-gradient(135deg, rgba(80,190,255,0.12) 0%, rgba(90,120,255,0.12) 100%) !important;
+  color: white !important;
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 18px 16px;
+  border: none;
+  position: relative;
+}
+
+.table tbody td {
+  padding: 18px 16px;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.02) !important;
+  vertical-align: middle;
+  font-weight: 500;
+}
+
+.table tbody tr:hover td {
+  background: rgba(255,255,255,0.03) !important;
+  transform: none;
+}
+
+/* Enhanced Cards */
+.user-details-card,
+.request-history-section,
+.new-request-section {
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(91,115,255,0.06);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 26px rgba(0,0,0,0.12);
+}
+
+.card-title {
+  color: #ffffff !important;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Modern Status & Access Badges */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-pending {
+  background: linear-gradient(135deg,#f0b66a 0%,#f08f3d 100%);
+  color: #241806 !important;
+  border-color: rgba(240,166,58,0.12);
+  box-shadow: none;
+}
+
+.status-completed {
+  background: linear-gradient(135deg,#36b36a 0%,#2fa25a 100%);
+  color: #ffffff !important;
+  border-color: rgba(47,162,90,0.12);
+  box-shadow: none;
+}
+
+.status-denied {
+  background: linear-gradient(135deg,#ef6b6b 0%,#e04949 100%);
+  color: #ffffff !important;
+  border-color: rgba(239,71,87,0.12);
+  box-shadow: none;
+}
+
+.access-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.access-user {
+  background: linear-gradient(135deg,#50bfff 0%,#3d95c6 100%);
+  color: white !important;
+  border-color: rgba(78,168,255,0.12);
+  box-shadow: none;
+}
+
+.access-admin {
+  background: linear-gradient(135deg,#ff8a8a 0%,#e57373 100%);
+  color: white !important;
+  border-color: rgba(255,107,107,0.12);
+  box-shadow: none;
+}
+
+.access-both {
+  background: linear-gradient(135deg,#a88ef0 0%,#8b76d9 100%);
+  color: white !important;
+  border-color: rgba(165,94,234,0.12);
+  box-shadow: none;
+}
+
+/* Enhanced Text Elements */
+.username-display {
+  color: #ffffff !important;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+.text-muted-improved {
+  color: rgba(255,255,255,0.64) !important;
+  font-weight: 500;
+}
+
+.request-indicator.has-requests {
+  color: #f0a83a !important;
+  font-weight: 800;
+}
+
+.request-indicator.no-requests {
+  color: rgba(255,255,255,0.5) !important;
+  font-weight: 600;
+}
+
+.request-id-badge {
+  background: linear-gradient(135deg,#50bfff 0%,#7a86f7 100%);
+  color: white !important;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  box-shadow: 0 6px 14px rgba(78,160,220,0.08);
+}
+
+.date-display {
+  color: rgba(255,255,255,0.78) !important;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.reason-display {
+  color: rgba(255,255,255,0.9) !important;
+  font-weight: 500;
+  max-width: 250px;
+  word-wrap: break-word;
+  line-height: 1.4;
+}
+
+/* Modern Form Controls */
+.form-select, .form-select-improved {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(18,20,28,0.78) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 12px;
+  color: #ffffff !important;
+  font-size: 0.98rem;
+  font-weight: 600;
+  transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+  outline: none;
+}
+
+.form-select:focus, .form-select-improved:focus {
+  border-color: rgba(78,168,255,0.9) !important;
+  box-shadow: 0 0 0 3px rgba(78,168,255,0.06) !important;
+  background: rgba(20,22,30,0.9) !important;
+}
+
+.form-select option, .form-select-improved option {
+  background: #1a1a2e;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 12px;
+}
+
+/* Modern Loading State */
+.loading-state {
+  text-align: center;
+  padding: 48px;
+  color: #ffffff;
+}
+
+.spinner-border {
+  width: 3.4rem;
+  height: 3.4rem;
+  border-color: #67bfff;
+  border-right-color: transparent;
+  box-shadow: none;
+}
+
+/* Enhanced Alert Styles */
+.alert,
+.alert-success-improved,
+.alert-danger-improved,
+.alert-warning-improved,
+.alert-info-improved {
+  border-radius: 12px;
+  border: none;
+  backdrop-filter: blur(12px);
+  margin: 20px 0;
+  padding: 16px 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.015);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.alert-success, .alert-success-improved {
+  background: rgba(55,178,106,0.04) !important;
+  color: #bff3d0 !important;
+  border: 1px solid rgba(55,178,106,0.08) !important;
+  box-shadow: none;
+}
+
+.alert-danger, .alert-danger-improved {
+  background: rgba(239,83,80,0.03) !important;
+  color: #ffdede !important;
+  border: 1px solid rgba(239,83,80,0.08) !important;
+  box-shadow: none;
+}
+
+.alert-warning, .alert-warning-improved {
+  background: rgba(240,168,58,0.03) !important;
+  color: #fff3e0 !important;
+  border: 1px solid rgba(240,168,58,0.08) !important;
+  box-shadow: none;
+}
+
+.alert-info, .alert-info-improved {
+  background: rgba(78,168,255,0.03) !important;
+  color: #dff3ff !important;
+  border: 1px solid rgba(78,168,255,0.08) !important;
+  box-shadow: none;
+}
+
+.btn-close-improved {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.18s ease;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-left: auto;
+}
+.btn-close-improved:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.06);
+  transform: scale(1.05);
+}
+
+/* Enhanced Animations */
+@keyframes float {
+  0%,100% { transform: translateY(0) translateX(0) rotate(0deg); }
+  25%     { transform: translateY(-20px) translateX(10px) rotate(2deg); }
+  50%     { transform: translateY(0) translateX(20px) rotate(0deg); }
+  75%     { transform: translateY(-10px) translateX(10px) rotate(-2deg); }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modern Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg,#5fbff0 0%,#6f78f6 100%);
+  border-radius: 4px;
+  opacity: 0.95;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg,#6f78f6 0%,#5fbff0 100%);
+}
+
+/* Mobile Responsive Enhancements */
+@media (max-width: 768px) {
+  .top-navigation-minimal { top: 20px; right: 20px; gap: 10px; }
+  .minimal-btn { width: 50px; height: 50px; font-size: 1rem; }
+  .request-container { padding: 26px 18px; margin: 12px; border-radius: 20px; }
+  .step-section { padding: 20px; }
+  .brand-name { font-size: 1.8rem; }
+  .table-responsive { font-size: 0.9rem; }
+  .table thead th, .table tbody td { padding: 12px 10px; }
+  .logo-icon { width: 56px; height: 56px; font-size: 1.6rem; }
+}
+
+@media (max-width: 480px) {
+  .request-container { padding: 20px 12px; }
+  .logo-section { flex-direction: column; gap: 12px; }
+  .brand-name { font-size: 1.5rem; }
+  .step-title { font-size: 1.2rem; flex-wrap: wrap; }
+  .form-input { padding: 12px 12px 12px 44px; }
+  .btn { padding: 12px 18px; font-size: 0.95rem; }
+}
+
+/* Ensure all text is visible with proper contrast */
+* { color: inherit; }
+body, body * { color: #ffffff; }
+.table tbody td *, .card-title, .step-title, .form-label, .form-label-improved { color: inherit !important; }
+
+/* Fix any remaining visibility issues */
+.table, .table * { color: #ffffff !important; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const validateForm = document.getElementById('validateUserForm');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const loadingState = document.getElementById('loadingState');
+    const alertContainer = document.getElementById('alertContainer');
+
+    let currentUserData = null;
+
+    // Form submission handler
+    validateForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+
+        if (!username || !email) {
+            showAlert('Please enter both username and email', 'danger');
+            return;
+        }
+
+        // FIXED: Clear previous data before validation
+        clearStep2Data();
+        
+        validateUser(username, email);
+    });
+
+    function validateUser(username, email) {
+        showLoading(true);
+        
+        fetch('/api/validate-user-for-request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                email: email
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+            
+            if (data.success) {
+                currentUserData = data;
+                displayUserDetails(data);
+                step2.style.display = 'block';
+                step2.classList.add('fade-in');
+                step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                // FIXED: Hide Step 2 and show error
+                step2.style.display = 'none';
+                showAlert(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showLoading(false);
+            // FIXED: Hide Step 2 on error
+            step2.style.display = 'none';
+            console.error('Error:', error);
+            showAlert('System error occurred. Please try again.', 'danger');
+        });
+    }
+
+    // FIXED: Function to clear Step 2 data
+    function clearStep2Data() {
+        step2.style.display = 'none';
+        step2.classList.remove('fade-in');
+        
+        // Clear all dynamic content
+        const userTableBody = document.getElementById('userDetailsTableBody');
+        const historySection = document.getElementById('requestHistorySection');
+        const historyTableBody = document.getElementById('requestHistoryTableBody');
+        const formContainer = document.getElementById('requestFormContainer');
+        
+        if (userTableBody) userTableBody.innerHTML = '';
+        if (historySection) historySection.style.display = 'none';
+        if (historyTableBody) historyTableBody.innerHTML = '';
+        if (formContainer) formContainer.innerHTML = '';
+        
+        currentUserData = null;
+    }
+
+    function displayUserDetails(data) {
+        const user = data.user;
+        const requests = data.requests || [];
+
+        // Populate user details table with improved styling
+        const userTableBody = document.getElementById('userDetailsTableBody');
+        const hasRequests = requests.length > 0;
+        const latestRequest = hasRequests ? requests[0] : null;
+
+        userTableBody.innerHTML = `
+            <tr>
+                <td><strong class="username-display">${user.username}</strong></td>
+                <td><span class="access-badge access-${getAccessClass(user.current_access)}">${formatAccess(user.current_access)}</span></td>
+                <td><span class="request-indicator ${hasRequests ? 'has-requests' : 'no-requests'}">${hasRequests ? 'Yes' : 'No'}</span></td>
+                <td>${latestRequest ? `<span class="access-badge access-${getAccessClass(latestRequest.requested_access)}">${formatAccess(latestRequest.requested_access)}</span>` : '<span class="text-muted-improved">-</span>'}</td>
+                <td>${latestRequest ? `<span class="status-badge status-${latestRequest.status.toLowerCase()}">${formatStatus(latestRequest.status)}</span>` : '<span class="text-muted-improved">-</span>'}</td>
+            </tr>
+        `;
+
+        // Show request history if exists
+        if (hasRequests) {
+            displayRequestHistory(requests);
+        } else {
+            // FIXED: Hide history section if no requests
+            document.getElementById('requestHistorySection').style.display = 'none';
+        }
+
+        // Show new request form
+        displayNewRequestForm(data);
+    }
+
+    function displayRequestHistory(requests) {
+        const historySection = document.getElementById('requestHistorySection');
+        const historyTableBody = document.getElementById('requestHistoryTableBody');
+
+        let historyRows = '';
+        requests.forEach(request => {
+            historyRows += `
+                <tr>
+                    <td><span class="request-id-badge">#${request.request_id}</span></td>
+                    <td><span class="access-badge access-${getAccessClass(request.requested_access)}">${formatAccess(request.requested_access)}</span></td>
+                    <td><span class="date-display">${request.request_date}</span></td>
+                    <td><span class="status-badge status-${request.status.toLowerCase()}">${formatStatus(request.status)}</span></td>
+                    <td><span class="reason-display">${request.reason || '-'}</span></td>
+                </tr>
+            `;
+        });
+
+        historyTableBody.innerHTML = historyRows;
+        historySection.style.display = 'block';
+    }
+
+    function displayNewRequestForm(data) {
+        const formContainer = document.getElementById('requestFormContainer');
+        const availableRequests = data.available_requests || [];
+        const canRequest = data.can_request;
+
+        if (!canRequest) {
+            if (availableRequests.length === 0) {
+                formContainer.innerHTML = `
+                    <div class="alert alert-info-improved">
+                        <i class="fas fa-info-circle me-2"></i>
+                        You already have both User and Admin access. No additional requests can be raised.
+                    </div>
+                `;
+            } else if (data.has_pending_request) {
+                formContainer.innerHTML = `
+                    <div class="alert alert-warning-improved">
+                        <i class="fas fa-clock me-2"></i>
+                        You have a pending request. Please wait for admin approval before raising a new request.
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        let optionsHtml = '';
+        availableRequests.forEach(access => {
+            optionsHtml += `<option value="${access}">${formatAccess(access)}</option>`;
+        });
+
+        formContainer.innerHTML = `
+            <form id="submitRequestForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label-improved">Select Requested Access</label>
+                        <select class="form-select-improved" id="requestedAccess" required>
+                            <option value="">Choose access level...</option>
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success-improved w-100">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Request
+                        </button>
+                    </div>
+                </div>
+            </form>
+        `;
+
+        // Add form submission handler
+        const submitForm = document.getElementById('submitRequestForm');
+        submitForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const requestedAccess = document.getElementById('requestedAccess').value;
+            if (!requestedAccess) {
+                showAlert('Please select an access level', 'danger');
+                return;
+            }
+            
+            submitAccessRequest(requestedAccess);
+        });
+    }
+
+    function submitAccessRequest(requestedAccess) {
+        showLoading(true);
+        
+        const requestData = {
+            username: currentUserData.user.username,
+            email: currentUserData.user.email,
+            current_access: currentUserData.user.current_access,
+            requested_access: requestedAccess
+        };
+
+        fetch('/api/submit-access-request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            showLoading(false);
+            
+            if (data.success) {
+                showAlert(data.message, 'success');
+                // Refresh user data to show the new request
+                setTimeout(() => {
+                    validateUser(currentUserData.user.username, currentUserData.user.email);
+                }, 1500);
+            } else {
+                showAlert(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showLoading(false);
+            console.error('Error:', error);
+            showAlert('System error occurred. Please try again.', 'danger');
+        });
+    }
+
+    function showLoading(show) {
+        if (show) {
+            loadingState.style.display = 'block';
+            step1.style.opacity = '0.5';
+            step2.style.opacity = '0.5';
+        } else {
+            loadingState.style.display = 'none';
+            step1.style.opacity = '1';
+            step2.style.opacity = '1';
+        }
+    }
+
+    function showAlert(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}-improved fade-in`;
+        alert.innerHTML = `
+            <i class="fas fa-${getAlertIcon(type)} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close-improved" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        alertContainer.innerHTML = '';
+        alertContainer.appendChild(alert);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alert.parentElement) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+
+    function getAlertIcon(type) {
+        switch(type) {
+            case 'success': return 'check-circle';
+            case 'danger': return 'exclamation-triangle';
+            case 'warning': return 'exclamation-triangle';
+            case 'info': return 'info-circle';
+            default: return 'info-circle';
+        }
+    }
+
+    function getAccessClass(access) {
+        if (access.includes(',') || (access.includes('admin') && access.includes('user'))) {
+            return 'both';
+        } else if (access.includes('admin')) {
+            return 'admin';
+        } else {
+            return 'user';
+        }
+    }
+
+    function formatAccess(access) {
+        if (access.includes(',')) {
+            return 'User & Admin';
+        } else if (access.toLowerCase() === 'admin') {
+            return 'Admin';
+        } else {
+            return 'User';
+        }
+    }
+
+    // FIXED: Better status formatting
+    function formatStatus(status) {
+        switch(status.toLowerCase()) {
+            case 'pending': return 'Pending';
+            case 'completed': return 'Approved';
+            case 'denied': return 'Denied';
+            default: return status;
+        }
+    }
+
+    // Add entrance animation
+    setTimeout(() => {
+        step1.classList.add('fade-in');
+    }, 300);
+
+    // FIXED: Add input event listeners to clear previous data when user starts typing
+    document.getElementById('username').addEventListener('input', function() {
+        if (this.value.trim() === '') {
+            clearStep2Data();
+        }
+    });
+
+    document.getElementById('email').addEventListener('input', function() {
+        if (this.value.trim() === '') {
+            clearStep2Data();
+        }
+    });
+});
+</script>
+
+{% endblock %}
