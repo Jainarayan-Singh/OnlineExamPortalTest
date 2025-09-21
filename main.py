@@ -32,7 +32,7 @@ from sessions import (
     invalidate_session, update_last_seen, set_exam_active, 
     require_valid_session, require_user_role, require_admin_role
 )
-
+from email_utils import send_credentials_email
 import threading
 cache_lock = threading.RLock()
 import gc
@@ -2332,150 +2332,9 @@ def api_reset_password():
 
 
 
-# 1. REPLACE your EMAIL_CONFIG with this (line 1-8 replace karo):
 
-EMAIL_CONFIG = {
-    'SMTP_SERVER': 'smtp.gmail.com',
-    'SMTP_PORT': 587,
-    'EMAIL_ADDRESS': os.environ.get('EMAIL_ADDRESS'),
-    'EMAIL_PASSWORD': os.environ.get('EMAIL_PASSWORD'),
-    'FROM_NAME': 'ExamPortal System'
-}
 
-# 2. REPLACE your send_credentials_email function completely (around line 50-90):
 
-def send_credentials_email(email, full_name, username, password):
-    """Send welcome email with credentials"""
-    try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Welcome to ExamPortal - Your Account Credentials'
-        msg['From'] = f"{EMAIL_CONFIG['FROM_NAME']} <{EMAIL_CONFIG['EMAIL_ADDRESS']}>"
-        msg['To'] = email
-
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    max-width: 600px;
-                    margin: 0 auto;
-                    padding: 20px;
-                }}
-                .header {{
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 30px;
-                    text-align: center;
-                    border-radius: 10px 10px 0 0;
-                }}
-                .content {{
-                    background: #f8f9fa;
-                    padding: 30px;
-                    border-radius: 0 0 10px 10px;
-                    border: 1px solid #e9ecef;
-                }}
-                .credentials-box {{
-                    background: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    border-left: 4px solid #28a745;
-                    margin: 20px 0;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }}
-                .credential-item {{
-                    margin: 10px 0;
-                    padding: 8px;
-                    background: #f8f9fa;
-                    border-radius: 4px;
-                }}
-                .credential-label {{
-                    font-weight: bold;
-                    color: #495057;
-                }}
-                .credential-value {{
-                    font-family: 'Courier New', monospace;
-                    color: #007bff;
-                    font-size: 16px;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>🎓 Welcome to ExamPortal!</h1>
-                <p>Your account has been successfully created</p>
-            </div>
-
-            <div class="content">
-                <p>Dear <strong>{full_name}</strong>,</p>
-
-                <p>Welcome to ExamPortal! Your account has been created successfully.</p>
-
-                <div class="credentials-box">
-                    <h3>🔐 Your Login Credentials</h3>
-                    <div class="credential-item">
-                        <span class="credential-label">Username:</span>
-                        <div class="credential-value">{username}</div>
-                    </div>
-                    <div class="credential-item">
-                        <span class="credential-label">Password:</span>
-                        <div class="credential-value">{password}</div>
-                    </div>
-                    <div class="credential-item">
-                        <span class="credential-label">Email:</span>
-                        <div class="credential-value">{email}</div>
-                    </div>
-                </div>
-
-                <p>Please keep these credentials secure and change your password after first login.</p>
-
-                <div style="text-align: center; margin-top: 30px; color: #6c757d; font-size: 14px;">
-                    <p><strong>ExamPortal Team</strong></p>
-                    <p>Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-
-        text_content = f"""
-        Welcome to ExamPortal!
-
-        Dear {full_name},
-
-        Your account has been created successfully. Here are your login credentials:
-
-        Username: {username}
-        Password: {password}
-        Email: {email}
-
-        Please keep these credentials secure don't share with anyone.
-
-        Best regards,
-        ExamPortal Team
-        """
-
-        text_part = MIMEText(text_content, 'plain')
-        html_part = MIMEText(html_content, 'html')
-
-        msg.attach(text_part)
-        msg.attach(html_part)
-
-        with smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT']) as server:
-            server.starttls()
-            server.login(EMAIL_CONFIG['EMAIL_ADDRESS'], EMAIL_CONFIG['EMAIL_PASSWORD'])
-            server.send_message(msg)
-
-        return True, "Email sent successfully"
-
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        return False, f"Failed to send email: {str(e)}"
-
-# 3. REPLACE your generate_username function (around line 15-25):
 
 def generate_username(full_name, existing_usernames):
     """Generate a unique username based on full name"""
@@ -2516,11 +2375,10 @@ def verify_email_exists(email):
         return False, "Invalid email domain"
 
 
-# 6. Your forgot_password route looks good, but make sure it's exactly like this:
-# (Replace the existing forgot_password route completely)
 
-@app.route('/forgot_password', methods=['GET', 'POST'])
-def forgot_password():
+
+@app.route('/create_account', methods=['GET', 'POST'])
+def create_account():
     """Enhanced user registration with concurrent safety and retry"""
     if request.method == 'POST':
         try:
@@ -2529,16 +2387,16 @@ def forgot_password():
 
             if not email:
                 flash('Please enter your email address.', 'error')
-                return render_template('forgot_password.html')
+                return render_template('create_account.html')
 
             if not full_name:
                 flash('Please enter your full name.', 'error')
-                return render_template('forgot_password.html', email=email)
+                return render_template('create_account.html', email=email)
 
             is_valid, error_message = verify_email_exists(email)
             if not is_valid:
                 flash(f'Invalid email: {error_message}', 'error')
-                return render_template('forgot_password.html', email=email, full_name=full_name)
+                return render_template('create_account.html', email=email, full_name=full_name)
 
             # Use safe registration with retry
             success, status, credentials = safe_user_register(email, full_name)
@@ -2550,21 +2408,71 @@ def forgot_password():
                 )
 
                 if email_sent:
-                    msg = 'Account created successfully!' if success else 'Account already exists!'
-                    flash(f'{msg} Your credentials have been sent to {email}', 'success')
+                    if success:
+                        # New account was created
+                        flash('Account created successfully! Your credentials have been sent to your email. Please check your spam folder if you don\'t see it in your inbox.', 'success')
+                    else:
+                        # Account already existed
+                        flash('Account already exists! Your credentials have been sent to your email. Please check your spam folder if you don\'t see it in your inbox.', 'success')
                 else:
                     msg = 'Account created!' if success else 'Account exists!'
                     flash(f'{msg} Here are your credentials:', 'success')
-                    
-                return render_template('forgot_password.html', success=True, email=email, credentials=credentials)
+                
+                # Store information in session (secure way)
+                session['reg_success_type'] = "created" if success else "exists"
+                session['reg_email'] = email
+                session['reg_username'] = credentials['username']
+                session['reg_password'] = credentials['password']
+                session['reg_fullname'] = credentials['full_name']
+                
+                # Redirect to success page with clean URL
+                return redirect(url_for('registration_success'))
             else:
                 flash(f'Registration failed: {status}. Please try again.', 'error')
+                return render_template('create_account.html', email=email, full_name=full_name)
 
         except Exception as e:
             print(f"Registration error: {e}")
             flash('System error occurred. Please try again.', 'error')
+            return render_template('create_account.html')
+    
+    # GET request
+    return render_template('create_account.html')
 
-    return render_template('forgot_password.html')
+@app.route('/registration-success')
+def registration_success():
+    """Show registration success page"""
+    # Get data from session
+    success_type = session.get('reg_success_type')
+    email = session.get('reg_email')
+    username = session.get('reg_username')
+    password = session.get('reg_password')
+    full_name = session.get('reg_fullname')
+    
+    # Verify we have the necessary data
+    if not all([success_type, email, username, password]):
+        flash('Session expired or invalid access.', 'error')
+        return redirect(url_for('create_account'))
+    
+    # Create credentials dictionary
+    credentials = {
+        'username': username,
+        'password': password,
+        'full_name': full_name
+    }
+    
+    # Clear session data after use
+    session.pop('reg_success_type', None)
+    session.pop('reg_email', None)
+    session.pop('reg_username', None)
+    session.pop('reg_password', None)
+    session.pop('reg_fullname', None)
+    
+    # Render the template with the success data
+    return render_template('create_account.html', 
+                           success=success_type, 
+                           email=email, 
+                           credentials=credentials)
 
 
 
@@ -4243,341 +4151,194 @@ def response_page(exam_id, result_id):
         return redirect(url_for('dashboard'))
 
 
-
-
 @app.route('/response-pdf/<int:exam_id>')
 @require_user_role
 def response_pdf(exam_id):
-    """Generate PDF with LaTeX rendered as images - handles math, vectors, chemistry"""
+    """Complete PDF using ReportLab - handles all Unicode"""
     try:
         from reportlab.lib.pagesizes import letter
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, KeepTogether
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import inch
         from reportlab.lib import colors
         from reportlab.lib.enums import TA_CENTER
         from io import BytesIO
-        import matplotlib.pyplot as plt
-        import matplotlib as mpl
-        mpl.use('Agg')
-        import tempfile
-        import os
-        import re
-        from PIL import Image as PILImage
         
-        # Create temp directory
-        temp_dir = tempfile.mkdtemp()
-        img_counter = 0
-        
-        def render_latex_to_image(text, fontsize=18):
-            """Render any LaTeX/text to image"""
-            nonlocal img_counter
-            
-            if not text or pd.isna(text) or str(text).strip() in ['', 'nan', 'None']:
-                return None
-            
-            text = str(text).strip()
-            
-            try:
-                img_counter += 1
-                img_path = os.path.join(temp_dir, f"formula_{img_counter}.png")
-                
-                # Clean text
-                original_text = text
-                
-                # Remove outer $ if present
-                if text.startswith('$$') and text.endswith('$$'):
-                    text = text[2:-2].strip()
-                elif text.startswith('$') and text.endswith('$'):
-                    text = text[1:-1].strip()
-                
-                # Setup matplotlib
-                plt.rcParams['text.usetex'] = False
-                plt.rcParams['mathtext.fontset'] = 'stix'  # Better for mixed content
-                plt.rcParams['font.family'] = 'STIXGeneral'
-                
-                # Create figure
-                fig, ax = plt.subplots(figsize=(10, 2))
-                fig.patch.set_facecolor('white')
-                ax.axis('off')
-                
-                # Check if it's LaTeX or plain text
-                if '\\' in text or '_' in text or '^' in text or any(c in text for c in ['∈', 'α', 'β', 'γ']):
-                    # It's LaTeX/math - wrap in $
-                    if not text.startswith('$'):
-                        display_text = f'${text}$'
-                    else:
-                        display_text = text
-                else:
-                    # Plain text
-                    display_text = text
-                
-                # Render
-                ax.text(0.5, 0.5, display_text,
-                       horizontalalignment='center',
-                       verticalalignment='center',
-                       transform=ax.transAxes,
-                       fontsize=fontsize,
-                       color='black')
-                
-                # Save
-                plt.savefig(img_path, dpi=150, bbox_inches='tight',
-                           pad_inches=0.1, facecolor='white')
-                plt.close(fig)
-                
-                # Verify
-                if os.path.exists(img_path) and os.path.getsize(img_path) > 0:
-                    return img_path
-                
-            except Exception as e:
-                print(f"Render error: {e}")
-                plt.close('all')
-                
-                # Try fallback - just render as plain text
-                try:
-                    fig, ax = plt.subplots(figsize=(10, 2))
-                    fig.patch.set_facecolor('white')
-                    ax.axis('off')
-                    
-                    # Clean for display
-                    display = original_text.replace('$', '').replace('\\', '')
-                    
-                    ax.text(0.5, 0.5, display,
-                           horizontalalignment='center',
-                           verticalalignment='center',
-                           transform=ax.transAxes,
-                           fontsize=fontsize,
-                           color='black',
-                           family='monospace')
-                    
-                    plt.savefig(img_path, dpi=150, bbox_inches='tight',
-                               pad_inches=0.1, facecolor='white')
-                    plt.close(fig)
-                    
-                    if os.path.exists(img_path):
-                        return img_path
-                except:
-                    plt.close('all')
-            
-            return None
-        
-        def add_content(elements, text, styles, is_option=False):
-            """Add text or LaTeX as image"""
-            if not text or pd.isna(text) or str(text).strip() in ['', 'nan', 'None']:
-                return
-            
-            text = str(text).strip()
-            
-            # Always try to render as image for consistency
-            img_path = render_latex_to_image(text, 16 if is_option else 18)
-            
-            if img_path:
-                try:
-                    img = Image(img_path)
-                    # Scale appropriately
-                    max_width = 4.5*inch if is_option else 6*inch
-                    img._restrictSize(max_width, 2*inch)
-                    
-                    if is_option:
-                        # Add some left padding for options
-                        spacer = Spacer(0.3*inch, 0)
-                        elements.append(spacer)
-                    
-                    elements.append(img)
-                    elements.append(Spacer(1, 6))
-                except:
-                    # Fallback to text
-                    clean_text = text.replace('$', '').replace('\\', '')
-                    para_style = ParagraphStyle('Option', parent=styles['Normal'], 
-                                              leftIndent=20 if is_option else 0)
-                    elements.append(Paragraph(clean_text, para_style))
-            else:
-                # Can't render, use text
-                clean_text = text.replace('$', '').replace('\\', '')
-                para_style = ParagraphStyle('Option', parent=styles['Normal'], 
-                                          leftIndent=20 if is_option else 0)
-                elements.append(Paragraph(clean_text, para_style))
-        
-        # Load data
         user_id = session.get('user_id')
-        full_name = session.get('full_name', 'Student')
+        username = session.get('username', 'Student')
+        full_name = session.get('full_name', username)
+        
+        # Get all your data (same as before)
+        exams_df = load_csv_with_cache('exams.csv')
+        exam_info = exams_df[exams_df['id'] == exam_id]
+        if exam_info.empty:
+            flash('Exam not found.', 'error')
+            return redirect(url_for('dashboard'))
+        
+        exam = exam_info.iloc[0]
         
         results_df = load_csv_with_cache('results.csv')
-        responses_df = load_csv_with_cache('responses.csv')
-        questions_df = load_csv_with_cache('questions.csv')
-        exams_df = load_csv_with_cache('exams.csv')
-        
-        # Get result
         user_result = results_df[
-            (results_df['student_id'].astype(str) == str(user_id)) &
-            (results_df['exam_id'].astype(str) == str(exam_id))
-        ]
+            (results_df['student_id'] == user_id) & 
+            (results_df['exam_id'] == exam_id)
+        ].tail(1)
         
         if user_result.empty:
             flash('No results found.', 'error')
-            return redirect(url_for('response_page', exam_id=exam_id))
+            return redirect(url_for('dashboard'))
         
-        result = user_result.iloc[-1]
+        result = user_result.iloc[0]
         result_id = result['id']
         
-        # Get exam info
-        exam_info = exams_df[exams_df['id'].astype(str) == str(exam_id)]
-        exam_name = exam_info.iloc[0]['name'] if not exam_info.empty else f"Exam {exam_id}"
-        
-        # Get responses
+        responses_df = load_csv_with_cache('responses.csv')
         user_responses = responses_df[
-            responses_df['result_id'].astype(str) == str(result_id)
+            responses_df['result_id'] == result_id
         ].sort_values('question_id')
+        
+        questions_df = load_csv_with_cache('questions.csv')
         
         # Create PDF
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter,
-                               rightMargin=50, leftMargin=50,
-                               topMargin=50, bottomMargin=50)
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=50)
         
-        elements = []
+        # Styles
         styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('CustomTitle', parent=styles['Title'], fontSize=18, textColor=colors.HexColor('#2c3e50'), spaceAfter=20, alignment=TA_CENTER)
+        heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=14, textColor=colors.HexColor('#2c3e50'), spaceAfter=10)
+        
+        story = []
         
         # Title
-        title_style = ParagraphStyle('Title', parent=styles['Title'],
-                                    fontSize=20, textColor=colors.HexColor('#1e40af'),
-                                    spaceAfter=20, alignment=TA_CENTER)
-        elements.append(Paragraph("<b>EXAM RESPONSE ANALYSIS</b>", title_style))
+        story.append(Paragraph("Exam Response Analysis", title_style))
         
-        # Info table
-        info_data = [
-            ['Exam:', exam_name],
-            ['Student:', full_name],
-            ['Date:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-            ['Score:', f"{result.get('score', 0)} / {result.get('max_score', 0)} ({result.get('percentage', 0):.1f}%)"],
-            ['Grade:', str(result.get('grade', 'N/A'))],
-            ['Performance:', f"Correct: {result.get('correct_answers', 0)} | Incorrect: {result.get('incorrect_answers', 0)} | Not Attempted: {result.get('unanswered_questions', 0)}"]
+        # Header info
+        header_data = [
+            ['Exam:', str(exam['name'])],
+            ['Student:', str(full_name)],
+            ['Score:', f"{result['score']}/{result['max_score']} ({result['percentage']:.1f}%)"],
+            ['Grade:', str(result['grade'])]
         ]
         
-        info_table = Table(info_data, colWidths=[1.5*inch, 5*inch])
-        info_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.lightblue),
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 11),
-            ('PADDING', (0, 0), (-1, -1), 10),
+        header_table = Table(header_data, colWidths=[1.5*inch, 4*inch])
+        header_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('PADDING', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, colors.black)
         ]))
         
-        elements.append(info_table)
-        elements.append(Spacer(1, 0.5*inch))
-        elements.append(Paragraph("<b>DETAILED ANALYSIS</b>", styles['Heading1']))
-        elements.append(Spacer(1, 0.2*inch))
+        story.append(header_table)
+        story.append(Spacer(1, 20))
         
-        # Process questions
-        question_num = 1
-        for _, response in user_responses.iterrows():
-            try:
-                question_id = response.get('question_id')
-                given_answer = str(response.get('given_answer', 'Not answered'))
-                correct_answer = str(response.get('correct_answer', 'N/A'))
-                is_correct = response.get('is_correct', False)
-                marks = float(response.get('marks_obtained', 0))
-                is_attempted = response.get('is_attempted', False)
-                question_type = response.get('question_type', 'MCQ')
-                
-                # Get question
-                question_data = questions_df[questions_df['id'].astype(str) == str(question_id)]
-                if question_data.empty:
-                    continue
-                
-                q = question_data.iloc[0]
-                question_text = q.get('question_text', '')
-                
-                q_elements = []
-                
-                # Header
-                status = "✓ CORRECT" if is_correct else "✗ INCORRECT" if is_attempted else "○ NOT ATTEMPTED"
-                color = colors.green if is_correct else colors.red if is_attempted else colors.grey
-                
-                header_style = ParagraphStyle('QHeader', parent=styles['Heading2'],
-                                             textColor=color, fontSize=13, spaceAfter=10)
-                
-                q_elements.append(Paragraph(f"<b>Question {question_num}: {status} (Marks: {marks})</b>",
-                                          header_style))
-                
-                # Question
-                q_elements.append(Paragraph("<b>Question:</b>", styles['Normal']))
-                add_content(q_elements, question_text, styles)
-                q_elements.append(Spacer(1, 10))
-                
-                # Options
-                if question_type in ['MCQ', 'MSQ']:
-                    q_elements.append(Paragraph("<b>Options:</b>", styles['Normal']))
-                    
-                    options = [
-                        ('A', q.get('option_a', '')),
-                        ('B', q.get('option_b', '')),
-                        ('C', q.get('option_c', '')),
-                        ('D', q.get('option_d', ''))
-                    ]
-                    
-                    for opt_id, opt_text in options:
-                        if opt_text and str(opt_text).strip() not in ['', 'nan', 'None']:
-                            marker = f"<b>{opt_id}.</b>"
-                            if str(given_answer) == opt_id and str(correct_answer) == opt_id:
-                                marker += ' <font color="green">✓ [CORRECT]</font>'
-                            elif str(given_answer) == opt_id:
-                                marker += ' <font color="red">✗ [YOUR CHOICE]</font>'
-                            elif str(correct_answer) == opt_id:
-                                marker += ' <font color="blue">→ [CORRECT ANSWER]</font>'
-                            
-                            q_elements.append(Paragraph(marker, styles['Normal']))
-                            add_content(q_elements, opt_text, styles, is_option=True)
-                            q_elements.append(Spacer(1, 5))
-                
-                # Answers
-                q_elements.append(Spacer(1, 10))
-                ans_table = Table(
-                    [['Your Answer:', given_answer],
-                     ['Correct Answer:', correct_answer]],
-                    colWidths=[1.5*inch, 3*inch]
-                )
-                ans_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, -1), colors.lightgrey),
-                    ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 10),
-                    ('PADDING', (0, 0), (-1, -1), 5),
-                    ('BOX', (0, 0), (-1, -1), 0.5, colors.black),
-                    ('TEXTCOLOR', (1, 0), (1, 0), colors.red if not is_correct and is_attempted else colors.green),
-                    ('TEXTCOLOR', (1, 1), (1, 1), colors.green)
-                ]))
-                q_elements.append(ans_table)
-                q_elements.append(Spacer(1, 15))
-                
-                elements.append(KeepTogether(q_elements))
-                question_num += 1
-                
-            except Exception as e:
-                print(f"Error: {e}")
+        # Questions and responses
+        for idx, response in user_responses.iterrows():
+            question_id = response['question_id']
+            question_row = questions_df[questions_df['id'] == question_id]
+            
+            if question_row.empty:
                 continue
+                
+            question = question_row.iloc[0]
+            
+            # Question header
+            story.append(Paragraph(f"Question {question_id}", heading_style))
+            
+            # Question text - ReportLab handles Unicode automatically
+            question_text = str(question.get('question_text', ''))
+            story.append(Paragraph(f"<b>Question:</b> {question_text}", styles['Normal']))
+            story.append(Spacer(1, 10))
+            
+            # Options for MCQ/MSQ
+            question_type = question.get('question_type', '')
+            if question_type in ['MCQ', 'MSQ']:
+                story.append(Paragraph("<b>Options:</b>", styles['Normal']))
+                
+                options = [
+                    ('A', question.get('option_a', '')),
+                    ('B', question.get('option_b', '')),
+                    ('C', question.get('option_c', '')),
+                    ('D', question.get('option_d', ''))
+                ]
+                
+                for label, option_text in options:
+                    if option_text and str(option_text).strip() and str(option_text) != 'nan':
+                        story.append(Paragraph(f"<b>{label}.</b> {option_text}", styles['Normal']))
+                
+                story.append(Spacer(1, 10))
+            
+            # Answers
+            given_answer = str(response.get('given_answer', 'Not Answered'))
+            if given_answer in ['nan', 'None', '']:
+                given_answer = 'Not Answered'
+                
+            correct_answer = str(response.get('correct_answer', 'N/A'))
+            if correct_answer in ['nan', 'None', '']:
+                correct_answer = 'N/A'
+            
+            marks = response.get('marks_obtained', 0)
+            is_correct = response.get('is_correct', False)
+            
+            answer_data = [
+                ['Your Answer:', given_answer],
+                ['Correct Answer:', correct_answer],
+                ['Marks Obtained:', str(marks)],
+                ['Status:', 'Correct' if is_correct else 'Incorrect' if given_answer != 'Not Answered' else 'Not Attempted']
+            ]
+            
+            answer_table = Table(answer_data, colWidths=[1.5*inch, 4*inch])
+            answer_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (0, -1), colors.lightblue),
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('PADDING', (0, 0), (-1, -1), 6),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            story.append(answer_table)
+            story.append(Spacer(1, 20))
         
-        # Build
-        doc.build(elements)
-        buffer.seek(0)
+        # Summary
+        story.append(Paragraph("Performance Summary", heading_style))
         
-        # Cleanup
-        try:
-            import shutil
-            shutil.rmtree(temp_dir)
-        except:
-            pass
+        summary_data = [
+            ['Total Questions:', str(result['total_questions'])],
+            ['Correct Answers:', str(result['correct_answers'])],
+            ['Incorrect Answers:', str(result['incorrect_answers'])],
+            ['Unanswered:', str(result['unanswered_questions'])],
+            ['Final Score:', f"{result['score']}/{result['max_score']}"],
+            ['Percentage:', f"{result['percentage']:.1f}%"]
+        ]
+        
+        summary_table = Table(summary_data, colWidths=[2*inch, 2*inch])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.lightgreen),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('PADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        story.append(summary_table)
+        
+        # Build PDF
+        doc.build(story)
+        
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
         
         return Response(
-            buffer.read(),
+            pdf_bytes,
             mimetype='application/pdf',
-            headers={'Content-Disposition': f'attachment; filename="exam_{exam_id}_response.pdf"'}
+            headers={'Content-Disposition': f'attachment; filename=exam_{exam_id}_response_{username}.pdf'}
         )
         
     except Exception as e:
-        print(f"PDF error: {e}")
+        print(f"PDF generation error: {e}")
+        import traceback
+        traceback.print_exc()
         flash('Error generating PDF.', 'error')
         return redirect(url_for('response_page', exam_id=exam_id))
-
 
 
 
@@ -4792,7 +4553,9 @@ def api_validate_user_for_request():
 
         user = user_row.iloc[0]
         current_access = str(user.get('role', 'user')).strip().lower()
-
+        
+        
+        init_requests_raised_if_needed()
         requests_df = load_csv_with_cache('requests_raised.csv', force_reload=True)
         if requests_df is None:
             requests_df = pd.DataFrame(columns=[
@@ -4906,6 +4669,7 @@ def api_submit_access_request():
             return jsonify({'success': False, 'message': 'User validation failed'}), 400
 
         try:
+            init_requests_raised_if_needed()
             requests_df = load_csv_with_cache('requests_raised.csv')
             if requests_df is None or requests_df.empty:
                 requests_df = pd.DataFrame(columns=[
@@ -5040,24 +4804,33 @@ def api_submit_access_request():
 
 
 # Helper function to initialize requests_raised.csv if it doesn't exist
-def ensure_requests_raised_csv():
-    """Ensure requests_raised.csv exists with proper structure"""
+def ensure_requests_raised_csv_safe():
+    """Safe version that doesn't use Flask session functions"""
     try:
-        # Try to load existing file
+        # Only check if file exists, don't try to load it
+        print("Checking requests_raised.csv file...")
+        return True  # Just return success for now
+    except Exception as e:
+        print(f"Error checking requests_raised.csv: {e}")
+        return False
+
+def init_requests_raised_if_needed():
+    """Initialize requests_raised.csv when actually needed (within request context)"""
+    try:
         requests_df = load_csv_with_cache('requests_raised.csv')
         if requests_df is None or requests_df.empty:
-            # Create new file with headers
             headers_df = pd.DataFrame(columns=[
                 'request_id', 'username', 'email', 'current_access',
                 'requested_access', 'request_date', 'request_status', 'reason'
             ])
-            safe_csv_save_with_retry(headers_df, 'requests_raised')
-            print("Created requests_raised.csv with headers")
+            success = safe_csv_save_with_retry(headers_df, 'requests_raised')
+            if success:
+                print("✅ Created requests_raised.csv with headers")
+            return success
+        return True
     except Exception as e:
-        print(f"Error ensuring requests_raised.csv: {e}")
-
-# Call this function during app initialization (add after other CSV initialization)
-ensure_requests_raised_csv()
+        print(f"Error initializing requests_raised.csv: {e}")
+        return False
 
 
 def cleanup_app_cache():
