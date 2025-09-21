@@ -32,7 +32,7 @@
 <div class="login-wrapper">
     <div class="container">
         <div class="row justify-content-center align-items-center min-vh-100">
-            <div class="col-xl-4 col-lg-5 col-md-6 col-sm-8">
+            <div class="col-xl-10 col-lg-11 col-md-12 col-sm-14">
                 <div class="login-container">
                     <!-- Logo & Header Section -->
                     <div class="login-header">
@@ -123,7 +123,7 @@
 
                     <!-- Action Links -->
                     <div class="action-links">
-                        <a href="{{ url_for('forgot_password') }}" class="action-link primary">
+                        <a href="{{ url_for('create_account') }}" class="action-link primary">
                             <i class="fas fa-user-plus"></i>
                             <span>Create New Account</span>
                         </a>
@@ -163,8 +163,11 @@
                                     <strong>Existing Student:</strong> Use your registered credentials
                                 </div>
                                 <div class="help-item">
-                                    <strong>Forgot Password:</strong> Use "Reset Password" to update your credentials
+                                    <strong>Forgot Password:</strong> Use "Create New Account" to get credentials via email
                                 </div>
+                                <div class="help-item">
+                                    <strong>Reset Password:</strong> Use "Reset Password" to update passwq
+                                </div>                                
                                 <div class="help-item">
                                     <strong>Login Issues:</strong> Contact your administrator for support
                                 </div>
