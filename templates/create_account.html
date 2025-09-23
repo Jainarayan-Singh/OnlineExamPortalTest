@@ -33,54 +33,50 @@
         <div class="row justify-content-center align-items-center min-vh-100">
             <div class="col-xl-4 col-lg-5 col-md-6 col-sm-8">
                 <div class="login-container">
-                    {% if success %}
-                        <!-- Success State -->
-                        <div class="login-header">
-                            <div class="logo-section">
-                                <div class="logo-icon success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <h1 class="brand-name">ExamPortal</h1>
-                            </div>
-{% if success == "exists" %}
-<h2 class="welcome-text">Account Already Exists!</h2>
+{% if success %}
+    <!-- Success State -->
+    <div class="login-header">
+        <div class="logo-section">
+            <div class="logo-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1 class="brand-name">ExamPortal</h1>
+        </div>
+        <h2 class="welcome-text">Registration Successful!</h2>
+        <p class="welcome-subtitle">A setup link has been sent to your email. Please check your inbox and spam folder.</p>
+    </div>
+
+
+
+    <div class="setup-instructions-card">
+        <div class="setup-header">
+            <i class="fas fa-envelope"></i>
+            <span>Next Steps</span>
+        </div>
+        <div class="setup-content">
+            <div class="setup-item">
+                <strong>1. Check your email:</strong> Look for a message from ExamPortal
+            </div>
+            <div class="setup-item">
+                <strong>2. Click the setup link:</strong> This will open a secure password setup form
+            </div>
+            <div class="setup-item">
+                <strong>3. Create your password:</strong> Choose a strong password for your account
+            </div>
+            <div class="setup-item">
+                <strong>4. Login:</strong> Use your username and new password to access the portal
+            </div>
+        </div>
+    </div>
+
+    <button onclick="window.location.href='{{ url_for('login') }}'" class="login-button">
+        <span class="button-content">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Go to Login</span>
+        </span>
+    </button>
 {% else %}
-<h2 class="welcome-text">Registration Successful!</h2>
-{% endif %}
-                            <p class="welcome-subtitle">Your credentials have been sent to {{ email }}. Please check your inbox and spam folder if you don't see it.</p>
-                        </div>
-
-                        {% if credentials %}
-                            <div class="credentials-card">
-                                <div class="credentials-header">
-                                    <i class="fas fa-key"></i>
-                                    <span>Your Login Credentials</span>
-                                </div>
-                                <div class="credentials-display">
-                                    <div class="credential-item">
-                                        <label>Username:</label>
-                                        <code>{{ credentials.username }}</code>
-                                    </div>
-                                    <div class="credential-item">
-                                        <label>Password:</label>
-                                        <code>{{ credentials.password }}</code>
-                                    </div>
-                                </div>
-                                <div class="credentials-note">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <span>Please save these credentials safely</span>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        <button onclick="window.location.href='{{ url_for('login') }}'" class="login-button">
-                            <span class="button-content">
-                                <i class="fas fa-sign-in-alt"></i>
-                                <span>Go to Login</span>
-                            </span>
-                        </button>
-
-                    {% else %}
+    <!-- Keep existing form as-is -->
                         <!-- Registration Form State -->
                         <div class="login-header">
                             <div class="logo-section">
@@ -109,57 +105,77 @@
                         {% endwith %}
 
                         <!-- Registration Form -->
-                        <form method="POST" id="registrationForm" class="login-form">
-                            <div class="form-group">
-                                <label for="full_name" class="form-label">
-                                    <i class="fas fa-user"></i> Full Name <span class="required">*</span>
-                                </label>
-                                <div class="input-wrapper">
-                                    <div class="input-icon">
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <input type="text"
-                                           class="form-input"
-                                           id="full_name"
-                                           name="full_name"
-                                           placeholder="Enter your full name"
-                                           value="{{ full_name or '' }}"
-                                           required>
-                                </div>
-                            </div>
+<!-- REPLACE THE FORM SECTION IN create_account.html WITH THIS: -->
 
-                            <div class="form-group">
-                                <label for="email" class="form-label">
-                                    <i class="fas fa-envelope"></i> Email Address <span class="required">*</span>
-                                </label>
-                                <div class="input-wrapper">
-                                    <div class="input-icon">
-                                        <i class="fas fa-envelope"></i>
-                                    </div>
-                                    <input type="email"
-                                           class="form-input"
-                                           id="email"
-                                           name="email"
-                                           placeholder="Enter your email address"
-                                           value="{{ email or '' }}"
-                                           required>
-                                </div>
-                                    <small class="input-note">
-                                        We'll send your login credentials and a password reset link to this email
-                                    </small>
-                            </div>
+<form method="POST" id="registrationForm" class="login-form">
+    <div class="form-group">
+        <label for="first_name" class="form-label">
+            <i class="fas fa-user"></i> First Name <span class="required">*</span>
+        </label>
+        <div class="input-wrapper">
+            <div class="input-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <input type="text"
+                   class="form-input"
+                   id="first_name"
+                   name="first_name"
+                   placeholder="Enter your first name"
+                   value="{{ first_name or '' }}"
+                   required>
+        </div>
+    </div>
 
-                            <button type="submit" class="login-button" id="submitBtn">
-                                <span class="button-content" id="submitText">
-                                    <i class="fas fa-user-plus"></i>
-                                    <span>Create Account</span>
-                                </span>
-                                <span id="loadingSpinner" class="button-loading">
-                                    <i class="fas fa-spinner fa-spin"></i>
-                                    <span>Creating Account...</span>
-                                </span>
-                            </button>
-                        </form>
+    <div class="form-group">
+        <label for="last_name" class="form-label">
+            <i class="fas fa-user"></i> Last Name <span class="required">*</span>
+        </label>
+        <div class="input-wrapper">
+            <div class="input-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <input type="text"
+                   class="form-input"
+                   id="last_name"
+                   name="last_name"
+                   placeholder="Enter your last name"
+                   value="{{ last_name or '' }}"
+                   required>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="email" class="form-label">
+            <i class="fas fa-envelope"></i> Email Address <span class="required">*</span>
+        </label>
+        <div class="input-wrapper">
+            <div class="input-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <input type="email"
+                   class="form-input"
+                   id="email"
+                   name="email"
+                   placeholder="Enter your email address"
+                   value="{{ email or '' }}"
+                   required>
+        </div>
+        <small class="input-note">
+            We'll send your login credentials and a password reset link to this email
+        </small>
+    </div>
+
+    <button type="submit" class="login-button" id="submitBtn">
+        <span class="button-content" id="submitText">
+            <i class="fas fa-user-plus"></i>
+            <span>Create Account</span>
+        </span>
+        <span class="button-loading" id="loadingText">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Creating Account...</span>
+        </span>
+    </button>
+</form>
 
                         <!-- Action Links -->
                         <div class="action-links">
@@ -178,10 +194,10 @@
                                 </div>
                                 <div class="help-content">
                                     <div class="help-item">
-                                        <strong>New User:</strong> Enter name + email → Account created + credentials sent via email
+                                        <strong>New User:</strong> Enter details → Account created → password generate link will be sent to your email
                                     </div>
                                     <div class="help-item">
-                                        <strong>Existing User:</strong> Enter details → Existing credentials sent to your email
+                                        <strong>Existing User:</strong> Use login page to access your account
                                     </div>
                                     <div class="help-item">
                                         <strong>Valid Domains:</strong> Gmail, Yahoo, Outlook, Educational domains supported
@@ -803,6 +819,8 @@ body {
 }
 </style>
 
+// REPLACE THE SCRIPT SECTION IN create_account.html WITH THIS:
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('registrationForm');
@@ -810,13 +828,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (form) {
         form.addEventListener('submit', function(e) {
-            const fullName = document.getElementById('full_name').value.trim();
+            const firstName = document.getElementById('first_name').value.trim();
+            const lastName = document.getElementById('last_name').value.trim();
             const email = document.getElementById('email').value.trim();
 
             // Basic validation
-            if (!fullName || fullName.length < 2) {
+            if (!firstName || firstName.length < 2) {
                 e.preventDefault();
-                alert('Please enter a valid full name (at least 2 characters)');
+                alert('Please enter a valid first name (at least 2 characters)');
+                return;
+            }
+
+            if (!lastName || lastName.length < 2) {
+                e.preventDefault();
+                alert('Please enter a valid last name (at least 2 characters)');
                 return;
             }
 
@@ -848,9 +873,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-dismiss flash messages after 5 seconds
     setTimeout(() => {
         flashAlerts.forEach(alert => {
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateY(-10px)';
-            setTimeout(() => alert.remove(), 300);
+            if (alert && alert.parentNode) {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 300);
+            }
         });
     }, 5000);
 
@@ -879,11 +910,16 @@ document.addEventListener('DOMContentLoaded', function() {
         particle.style.animationDuration = Math.random() * 6 + 6 + 's';
         particle.style.animationDelay = Math.random() * 3 + 's';
         
-        document.querySelector('.particles-container').appendChild(particle);
-        
-        setTimeout(() => {
-            particle.remove();
-        }, 12000);
+        const particlesContainer = document.querySelector('.particles-container');
+        if (particlesContainer) {
+            particlesContainer.appendChild(particle);
+            
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.remove();
+                }
+            }, 12000);
+        }
     }
 
     // Generate new particles periodically
@@ -891,21 +927,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add entrance animation
     const loginContainer = document.querySelector('.login-container');
-    loginContainer.style.opacity = '0';
-    loginContainer.style.transform = 'translateY(30px)';
-    
-    setTimeout(() => {
-        loginContainer.style.transition = 'all 0.8s ease';
-        loginContainer.style.opacity = '1';
-        loginContainer.style.transform = 'translateY(0)';
-    }, 300);
+    if (loginContainer) {
+        loginContainer.style.opacity = '0';
+        loginContainer.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            loginContainer.style.transition = 'all 0.8s ease';
+            loginContainer.style.opacity = '1';
+            loginContainer.style.transform = 'translateY(0)';
+        }, 300);
+    }
 
     // Focus on first empty field
-    const fullNameField = document.getElementById('full_name');
+    const firstNameField = document.getElementById('first_name');
+    const lastNameField = document.getElementById('last_name');
     const emailField = document.getElementById('email');
 
-    if (fullNameField && !fullNameField.value) {
-        fullNameField.focus();
+    if (firstNameField && !firstNameField.value) {
+        firstNameField.focus();
+    } else if (lastNameField && !lastNameField.value) {
+        lastNameField.focus();
     } else if (emailField && !emailField.value) {
         emailField.focus();
     }

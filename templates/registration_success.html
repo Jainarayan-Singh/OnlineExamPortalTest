@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %}Registration Complete - ExamPortal{% endblock %}
+{% block content %}
+<!-- Same particles background -->
+<div class="particles-container">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<div class="login-wrapper">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xl-5 col-lg-6 col-md-7 col-sm-9">
+                <div class="success-container">
+                    <div class="success-header">
+                        <div class="logo-section">
+                            <div class="success-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h1 class="brand-name">ExamPortal</h1>
+                        </div>
+                        <h2 class="success-title">Registration Complete</h2>
+                        <p class="success-subtitle">Your account setup is ready to be completed</p>
+                    </div>
+                    
+                    <div class="instructions-panel">
+                        <div class="panel-header">
+                            <i class="fas fa-envelope-open-text"></i>
+                            <span>Setup Instructions</span>
+                        </div>
+                        
+                        <div class="instruction-content">
+                            <p class="main-message">A secure setup link has been sent to your email address. Please follow the steps below to complete your registration:</p>
+                            
+                            <div class="steps-list">
+                                <div class="step-item">
+                                    <div class="step-number">1</div>
+                                    <div class="step-details">
+                                        <strong>Check your email</strong>
+                                        <span>Look in both inbox and spam folder</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="step-item">
+                                    <div class="step-number">2</div>
+                                    <div class="step-details">
+                                        <strong>Click the setup link</strong>
+                                        <span>Opens secure password creation form</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="step-item">
+                                    <div class="step-number">3</div>
+                                    <div class="step-details">
+                                        <strong>Create your password</strong>
+                                        <span>Choose a strong, secure password</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="step-item">
+                                    <div class="step-number">4</div>
+                                    <div class="step-details">
+                                        <strong>Access your account</strong>
+                                        <span>Login and start using ExamPortal</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-section">
+                        <a href="{{ url_for('login') }}" class="login-btn">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Go to Login</span>
+                        </a>
+                        
+                        <div class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Didn't receive the email? Check your spam folder or contact support</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Professional Registration Success Styles */
+.success-container {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+    max-width: 500px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.success-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.03) 100%);
+    border-radius: 20px;
+    z-index: -1;
+}
+
+/* Header Section */
+.success-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 1.5rem;
+}
+
+.success-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+.brand-name {
+    font-size: 1.9rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffffff 0%, #10b981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    line-height: 1;
+}
+
+.success-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.2;
+}
+
+.success-subtitle {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1.05rem;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Instructions Panel */
+.instructions-panel {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin-bottom: 2rem;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+    color: #10b981;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.panel-header i {
+    font-size: 1.2rem;
+}
+
+.main-message {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.75rem 0;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.step-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.step-details strong {
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.step-details span {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Action Section */
+.action-section {
+    text-align: center;
+}
+
+.login-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    margin-bottom: 1.5rem;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(102, 126, 234, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.login-btn i {
+    font-size: 1.1rem;
+}
+
+.help-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.help-text i {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .success-container {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+        border-radius: 18px;
+    }
+    
+    .success-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 1.7rem;
+    }
+    
+    .brand-name {
+        font-size: 1.6rem;
+    }
+    
+    .success-title {
+        font-size: 1.7rem;
+    }
+    
+    .success-subtitle {
+        font-size: 1rem;
+    }
+    
+    .instructions-panel {
+        padding: 1.5rem;
+    }
+    
+    .step-item {
+        gap: 0.8rem;
+    }
+    
+    .step-number {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+    
+    .login-btn {
+        padding: 14px 28px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .success-container {
+        padding: 1.75rem 1.25rem;
+    }
+    
+    .logo-section {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .success-title {
+        font-size: 1.5rem;
+    }
+    
+    .help-text {
+        flex-direction: column;
+        gap: 6px;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}

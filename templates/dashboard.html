@@ -98,18 +98,91 @@
         margin-bottom: 0;
     }
 
-    /* Modern Tabs */
-    .modern-tabs {
-        display: flex;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
-        border-radius: 20px;
-        padding: 0.5rem;
-        margin-bottom: 3rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        overflow-x: auto;
-        gap: 0.5rem;
+    /* Enhanced Tab Controls */
+.tab-controls-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+}
+.tab-controls-container > .modern-tabs {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
+.view-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    flex: 0 0 auto;
+}
+
+
+    .view-toggle-container.show {
+        opacity: 1;
     }
+
+    .view-controls {
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.4rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .view-btn {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+
+    .view-btn:hover {
+        color: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .view-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .exam-counter {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* Modern Tabs */
+.modern-tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow-x: auto;
+    gap: 0.5rem;
+    box-sizing: border-box;
+}
+
 
     .modern-tab {
         flex: 1;
@@ -273,6 +346,12 @@
         font-size: 1rem;
     }
 
+    .exam-description {
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
     /* Status Badges */
     .status-badge {
         padding: 0.5rem 1rem;
@@ -383,6 +462,138 @@
         text-decoration: none;
     }
 
+    /* List View Styles */
+    .exam-list-view {
+        display: none;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .exam-list-view.active-view {
+        display: block;
+    }
+
+    .exam-grid-view {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 2rem;
+    }
+
+    .exam-grid-view.active-view {
+        display: grid;
+    }
+
+    .list-header {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.2fr;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+        color: white;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .list-body {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .list-item {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.2fr;
+        gap: 1rem;
+        padding: 1.2rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .list-item:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .list-item.live-exam {
+        background: rgba(16, 185, 129, 0.05);
+        border-left: 3px solid #10b981;
+    }
+
+    .list-col {
+        display: flex;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+    }
+
+    .exam-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .exam-name-cell i {
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+
+    .exam-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .exam-info strong {
+        color: white;
+        font-weight: 600;
+    }
+
+    .exam-description-short {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.8rem;
+        line-height: 1.3;
+    }
+
+    .action-btn-compact {
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        min-width: 100px;
+        justify-content: center;
+    }
+
+    .action-btn-compact.disabled {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.5);
+        cursor: not-allowed;
+    }
+
+    .action-btn-compact.start-exam {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .action-btn-compact.start-exam:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
     /* Modern Table */
     .modern-table {
         background: rgba(255, 255, 255, 0.05);
@@ -421,6 +632,252 @@
         background: rgba(102, 126, 234, 0.1);
     }
 
+    /* Score Display */
+    .score-display {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.8rem 1.2rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Enhanced Results History Section */
+    .results-history-section {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .history-intro {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .history-intro::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.03) 100%);
+        border-radius: 20px;
+        z-index: -1;
+    }
+
+    .history-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .history-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
+
+    .history-text h3 {
+        color: white;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        line-height: 1.2;
+    }
+
+    .history-text p {
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 1.1rem;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .feature-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .feature-icon {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+
+    .feature-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .feature-content strong {
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        line-height: 1.3;
+    }
+
+    .feature-content span {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .history-actions {
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .history-main-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.8rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 16px;
+        color: white;
+        text-decoration: none;
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .history-main-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .history-main-btn:hover::before {
+        left: 100%;
+    }
+
+    .history-main-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 40px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-content {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+    }
+
+    .btn-content i {
+        font-size: 1.4rem;
+    }
+
+    .btn-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        text-align: left;
+    }
+
+    .btn-text strong {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .btn-text span {
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    .btn-arrow {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+
+    .history-main-btn:hover .btn-arrow {
+        transform: translateX(5px);
+    }
+
+    .quick-stats {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: white;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .stat-divider {
+        width: 1px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
     /* Empty State */
     .empty-state {
         background: rgba(255, 255, 255, 0.05);
@@ -452,73 +909,27 @@
         margin-bottom: 0;
     }
 
-    /* History Button */
-    .history-button-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 300px;
+    /* Search Input Styles */
+    .exam-search-input {
+        padding: 0.7rem 1rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 10px !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        font-size: 0.9rem !important;
+        width: 250px !important;
+        backdrop-filter: blur(10px) !important;
+        transition: all 0.3s ease !important;
     }
 
-    .history-btn {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(20px);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        padding: 2rem 3rem;
-        border-radius: 20px;
-        font-size: 1.3rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.4s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 1rem;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        position: relative;
-        overflow: hidden;
+    .exam-search-input::placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
     }
 
-    .history-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.5s;
-    }
-
-    .history-btn:hover::before {
-        left: 100%;
-    }
-
-    .history-btn:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
-        color: white;
-        text-decoration: none;
-        transform: translateY(-5px) scale(1.05);
-        box-shadow: 0 30px 60px rgba(102, 126, 234, 0.4);
-    }
-
-    /* Score Display */
-    .score-display {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 0.8rem 1.2rem;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    /* Grid Layout */
-    .exam-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-        gap: 2rem;
+    .exam-search-input:focus {
+        outline: none !important;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
     }
 
     /* Responsive Design */
@@ -536,6 +947,16 @@
             font-size: 2rem;
         }
         
+        .tab-controls-container {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .view-toggle-container {
+            justify-content: center;
+        }
+        
         .modern-tabs {
             flex-direction: column;
             gap: 0.5rem;
@@ -545,9 +966,31 @@
             min-width: auto;
         }
         
-        .exam-grid {
+        .exam-grid-view {
             grid-template-columns: 1fr;
             gap: 1.5rem;
+        }
+        
+        .list-header,
+        .list-item {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .list-col {
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 0;
+        }
+        
+        .list-col::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .exam-meta {
@@ -561,6 +1004,79 @@
         .modern-table th,
         .modern-table td {
             padding: 1rem;
+        }
+        
+        .feature-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .history-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .history-text h3 {
+            font-size: 1.8rem;
+        }
+        
+        .quick-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .stat-divider {
+            width: 100%;
+            height: 1px;
+        }
+        
+        .history-main-btn {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .btn-content {
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        
+        .exam-search-input {
+            width: 100% !important;
+            max-width: 300px !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .exam-grid-view {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .history-intro {
+            padding: 1.5rem;
+        }
+        
+        .history-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.7rem;
+        }
+        
+        .history-text h3 {
+            font-size: 1.6rem;
+        }
+        
+        .feature-item {
+            padding: 0.8rem;
+        }
+        
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.1rem;
         }
     }
 
@@ -583,6 +1099,136 @@
     .modern-card:nth-child(2) { animation-delay: 0.2s; }
     .modern-card:nth-child(3) { animation-delay: 0.3s; }
     .modern-card:nth-child(4) { animation-delay: 0.4s; }
+
+    /* ---- Filter UI (additive styles - safe to append) ---- */
+    .filter-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: 0.8rem;
+    }
+
+    /* Apply Button */
+    .filter-apply-btn {
+        padding: 0.55rem 0.9rem;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(118,75,162,0.18);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .filter-apply-btn:active { transform: translateY(1px); }
+    .filter-apply-btn[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Small spinner inside button */
+    .filter-apply-btn .btn-spinner {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.2);
+        border-top-color: rgba(255,255,255,0.95);
+        animation: filter-spin 0.8s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    @keyframes filter-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Loading overlay that covers the tab pane area while filtering */
+    .filter-loading-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        border-radius: 12px;
+        backdrop-filter: blur(2px);
+        opacity: 0;
+        transition: opacity 0.18s ease;
+        pointer-events: none;
+    }
+    .filter-loading-overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Central loader box */
+    .filter-loading-box {
+        background: rgba(255,255,255,0.06);
+        padding: 1rem 1.2rem;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    }
+    .filter-loading-box .spinner-lg {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 3px solid rgba(255,255,255,0.12);
+        border-top-color: rgba(255,255,255,0.95);
+        animation: filter-spin 0.9s linear infinite;
+    }
+
+    /* Visually hide but keep grid/list layout consistent */
+    .exam-card.filtered-out {
+        opacity: 0.18 !important;
+        transform: scale(0.98) translateY(4px);
+        pointer-events: none;
+    }
+
+    /* When list view (block items) hide more cleanly */
+    .exam-list-view .list-item.filtered-out {
+        height: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        overflow: hidden;
+        visibility: hidden;
+    }
+
+    /* Small responsive tweak for filter controls inside view-toggle */
+    @media (max-width: 768px) {
+        .filter-controls { width: 100%; justify-content: flex-end; margin-top: 0.5rem; }
+        .filter-apply-btn { padding: 0.6rem 0.9rem; }
+        .exam-search-input { width: 100% !important; max-width: 300px !important; }
+    }
+
+    /* Ripple effect style (keeps original behavior) */
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.6);
+        transform: scale(0);
+        animation: ripple-animation 0.6s linear;
+        pointer-events: none;
+    }
+
+    @keyframes ripple-animation {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
 </style>
 
 <div class="dashboard-body">
@@ -604,24 +1250,42 @@
             <p>Manage your exams and view your progress with our next-generation platform</p>
         </div>
 
-        <!-- Modern Tabs -->
-        <div class="modern-tabs loading">
-            <button class="modern-tab active" onclick="switchTab('upcoming')">
-                <i class="fas fa-calendar-alt"></i>
-                Upcoming Exams
-            </button>
-            <button class="modern-tab" onclick="switchTab('ongoing')">
-                <i class="fas fa-play-circle"></i>
-                Ongoing Exams
-            </button>
-            <button class="modern-tab" onclick="switchTab('completed')">
-                <i class="fas fa-check-circle"></i>
-                Completed Exams
-            </button>
-            <button class="modern-tab" onclick="switchTab('history')">
-                <i class="fas fa-history"></i>
-                Results History
-            </button>
+        <!-- Enhanced Tab Controls with View Toggle -->
+        <div class="tab-controls-container">
+            <div class="modern-tabs loading">
+                <button class="modern-tab active" onclick="switchTab('upcoming')">
+                    <i class="fas fa-calendar-alt"></i>
+                    Upcoming Exams
+                </button>
+                <button class="modern-tab" onclick="switchTab('ongoing')">
+                    <i class="fas fa-play-circle"></i>
+                    Ongoing Exams
+                </button>
+                <button class="modern-tab" onclick="switchTab('completed')">
+                    <i class="fas fa-check-circle"></i>
+                    Completed Exams
+                </button>
+                <button class="modern-tab" onclick="switchTab('history')">
+                    <i class="fas fa-history"></i>
+                    Results History
+                </button>
+            </div>
+
+            <!-- View Toggle Controls -->
+            <div class="view-toggle-container" id="viewToggleContainer">
+                <div class="view-controls">
+                    <button class="view-btn active" onclick="switchView('grid')" title="Grid View">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button class="view-btn" onclick="switchView('list')" title="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+                
+                <div class="exam-counter">
+                    <span id="examCount">0 exams</span>
+                </div>
+            </div>
         </div>
 
         <!-- Tab Content -->
@@ -629,9 +1293,10 @@
             <!-- Upcoming Exams -->
             <div class="tab-pane active" id="upcoming">
                 {% if upcoming_exams %}
-                <div class="exam-grid">
+                <!-- Grid View -->
+                <div class="exam-grid-view active-view">
                     {% for exam in upcoming_exams %}
-                    <div class="modern-card loading">
+                    <div class="modern-card loading exam-card">
                         <div class="card-header">
                             <div class="card-title">
                                 <i class="fas fa-file-alt"></i>
@@ -658,7 +1323,7 @@
                                     {{ exam.total_questions }} questions
                                 </div>
                             </div>
-                            <p>{{ exam.instructions }}</p>
+                            <p class="exam-description">{{ exam.instructions }}</p>
                         </div>
                         <div class="card-footer">
                             <button class="action-btn disabled">
@@ -668,6 +1333,47 @@
                         </div>
                     </div>
                     {% endfor %}
+                </div>
+
+                <!-- List View -->
+                <div class="exam-list-view">
+                    <div class="list-header">
+                        <div class="list-col col-name">Exam Name</div>
+                        <div class="list-col col-date">Date</div>
+                        <div class="list-col col-time">Time</div>
+                        <div class="list-col col-duration">Duration</div>
+                        <div class="list-col col-questions">Questions</div>
+                        <div class="list-col col-status">Status</div>
+                        <div class="list-col col-action">Action</div>
+                    </div>
+                    <div class="list-body">
+                        {% for exam in upcoming_exams %}
+                        <div class="list-item exam-card">
+                            <div class="list-col col-name" data-label="Exam Name">
+                                <div class="exam-name-cell">
+                                    <i class="fas fa-file-alt"></i>
+                                    <div class="exam-info">
+                                        <strong>{{ exam.name }}</strong>
+                                        <span class="exam-description-short">{{ exam.instructions[:60] }}{% if exam.instructions|length > 60 %}...{% endif %}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-col col-date" data-label="Date">{{ exam.date }}</div>
+                            <div class="list-col col-time" data-label="Time">{{ exam.start_time }}</div>
+                            <div class="list-col col-duration" data-label="Duration">{{ exam.duration }} mins</div>
+                            <div class="list-col col-questions" data-label="Questions">{{ exam.total_questions }}</div>
+                            <div class="list-col col-status" data-label="Status">
+                                <span class="status-badge upcoming">Upcoming</span>
+                            </div>
+                            <div class="list-col col-action" data-label="Action">
+                                <button class="action-btn-compact disabled">
+                                    <i class="fas fa-clock"></i>
+                                    Not Started
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
                 {% else %}
                 <div class="empty-state">
@@ -681,9 +1387,10 @@
             <!-- Ongoing Exams -->
             <div class="tab-pane" id="ongoing">
                 {% if ongoing_exams %}
-                <div class="exam-grid">
+                <!-- Grid View -->
+                <div class="exam-grid-view active-view">
                     {% for exam in ongoing_exams %}
-                    <div class="modern-card exam-live loading">
+                    <div class="modern-card exam-live loading exam-card">
                         <div class="card-header">
                             <div class="card-title">
                                 <i class="fas fa-play-circle"></i>
@@ -710,7 +1417,7 @@
                                     {{ exam.total_questions }} questions
                                 </div>
                             </div>
-                            <p>{{ exam.instructions }}</p>
+                            <p class="exam-description">{{ exam.instructions }}</p>
                         </div>
                         <div class="card-footer">
                             <a href="{{ url_for('exam_instructions', exam_id=exam.id) }}" class="action-btn start-exam">
@@ -720,6 +1427,47 @@
                         </div>
                     </div>
                     {% endfor %}
+                </div>
+
+                <!-- List View -->
+                <div class="exam-list-view">
+                    <div class="list-header">
+                        <div class="list-col col-name">Exam Name</div>
+                        <div class="list-col col-date">Date</div>
+                        <div class="list-col col-time">Time</div>
+                        <div class="list-col col-duration">Duration</div>
+                        <div class="list-col col-questions">Questions</div>
+                        <div class="list-col col-status">Status</div>
+                        <div class="list-col col-action">Action</div>
+                    </div>
+                    <div class="list-body">
+                        {% for exam in ongoing_exams %}
+                        <div class="list-item exam-card live-exam">
+                            <div class="list-col col-name" data-label="Exam Name">
+                                <div class="exam-name-cell">
+                                    <i class="fas fa-play-circle"></i>
+                                    <div class="exam-info">
+                                        <strong>{{ exam.name }}</strong>
+                                        <span class="exam-description-short">{{ exam.instructions[:60] }}{% if exam.instructions|length > 60 %}...{% endif %}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-col col-date" data-label="Date">{{ exam.date }}</div>
+                            <div class="list-col col-time" data-label="Time">{{ exam.start_time }}</div>
+                            <div class="list-col col-duration" data-label="Duration">{{ exam.duration }} mins</div>
+                            <div class="list-col col-questions" data-label="Questions">{{ exam.total_questions }}</div>
+                            <div class="list-col col-status" data-label="Status">
+                                <span class="status-badge live">LIVE</span>
+                            </div>
+                            <div class="list-col col-action" data-label="Action">
+                                <a href="{{ url_for('exam_instructions', exam_id=exam.id) }}" class="action-btn-compact start-exam">
+                                    <i class="fas fa-rocket"></i>
+                                    Start Now
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
                 {% else %}
                 <div class="empty-state">
@@ -731,64 +1479,156 @@
             </div>
 
             <!-- Completed Exams -->
-            <div class="tab-pane" id="completed">
-                {% if completed_exams %}
-                <div class="modern-table">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th><i class="fas fa-file-alt"></i> Exam Name</th>
-                                <th><i class="fas fa-calendar"></i> Date</th>
-                                <th><i class="fas fa-chart-bar"></i> Score</th>
-                                <th><i class="fas fa-info-circle"></i> Status</th>
-                                <th><i class="fas fa-eye"></i> Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for exam in completed_exams %}
-                            <tr>
-                                <td>
-                                    <strong>{{ exam.name }}</strong>
-                                </td>
-                                <td>{{ exam.date }}</td>
-                                <td>
-                                    {% if exam.result %}
-                                        <span class="score-display">{{ exam.result }}</span>
-                                    {% else %}
-                                        <span class="status-badge pending">Pending</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="status-badge completed">
-                                        <i class="fas fa-check"></i> Completed
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="{{ url_for('result', exam_id=exam.id) }}" class="action-btn view-result" style="width: auto; padding: 0.7rem 1.5rem;">
-                                        <i class="fas fa-eye"></i> View Result
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+<div class="tab-pane" id="completed">
+    {% if completed_exams %}
+    <div class="exam-grid-view active-view">
+        {% for exam in completed_exams %}
+        <div class="modern-card loading exam-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-check-circle"></i>
+                    {{ exam.name }}
+                    <span class="status-badge completed">Completed</span>
                 </div>
-                {% else %}
-                <div class="empty-state">
-                    <i class="fas fa-clipboard-list"></i>
-                    <h4>No Completed Exams</h4>
-                    <p>You haven't completed any exams yet. Start your first assessment to see results here!</p>
-                </div>
-                {% endif %}
             </div>
+            <div class="card-body">
+                <div class="exam-meta">
+                    <div class="exam-meta-item">
+                        <i class="fas fa-calendar"></i>
+                        {{ exam.date }}
+                    </div>
+                    <div class="exam-meta-item">
+                        <i class="fas fa-chart-bar"></i>
+                        {% if exam.result %}
+                            <span class="score-display">{{ exam.result }}</span>
+                        {% else %}
+                            <span class="status-badge pending">Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('result', exam_id=exam.id) }}" class="action-btn view-result">
+                    <i class="fas fa-eye"></i> View Result
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-clipboard-list"></i>
+        <h4>No Completed Exams</h4>
+        <p>You haven't completed any exams yet. Start your first assessment to see results here!</p>
+    </div>
+    {% endif %}
+</div>
 
-            <!-- Results History -->
+
+            <!-- Enhanced Results History Section -->
             <div class="tab-pane" id="history">
-                <div class="history-button-container">
-                    <a href="{{ url_for('results_history') }}" class="history-btn">
-                        <i class="fas fa-sync-alt"></i>
-                        Open Full Results History
-                    </a>
+                <div class="results-history-section">
+                    <div class="history-intro">
+                        <div class="history-header">
+                            <div class="history-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="history-text">
+                                <h3>Comprehensive Results History</h3>
+                                <p>Track your academic progress and performance analytics</p>
+                            </div>
+                        </div>
+                        
+                        <div class="history-features">
+                            <div class="feature-grid">
+                                <div class="feature-item">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-analytics"></i>
+                                    </div>
+                                    <div class="feature-content">
+                                        <strong>Performance Analytics</strong>
+                                        <span>Detailed score breakdowns and trend analysis</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="feature-item">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="feature-content">
+                                        <strong>Response Review</strong>
+                                        <span>Review your answers and correct solutions</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="feature-item">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div class="feature-content">
+                                        <strong>Date-wise Results</strong>
+                                        <span>Filter and view results by specific dates</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="feature-item">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div class="feature-content">
+                                        <strong>Performance Insights</strong>
+                                        <span>Identify strengths and improvement areas</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-actions">
+                        <a href="{{ url_for('results_history') }}" class="history-main-btn">
+                            <div class="btn-content">
+                                <i class="fas fa-external-link-alt"></i>
+                                <div class="btn-text">
+                                    <strong>Open Results History</strong>
+                                    <span>Access detailed performance dashboard</span>
+                                </div>
+                            </div>
+                            <div class="btn-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
+                        
+                        <div class="quick-stats">
+                            <div class="stat-item">
+                                <div class="stat-number">{{ completed_exams|length if completed_exams else 0 }}</div>
+                                <div class="stat-label">Exams Completed</div>
+                            </div>
+                            <div class="stat-divider"></div>
+                            <div class="stat-item">
+                                <div class="stat-number">
+                                    {% if completed_exams %}
+                                        {% set total_score = 0 %}
+                                        {% set count = 0 %}
+                                        {% for exam in completed_exams %}
+                                            {% if exam.result %}
+                                                {% set score = exam.result.split('/')[0]|int if '/' in exam.result else exam.result|int %}
+                                                {% set total_score = total_score + score %}
+                                                {% set count = count + 1 %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if count > 0 %}
+                                            {{ "%.1f"|format(total_score / count) }}%
+                                        {% else %}
+                                            --
+                                        {% endif %}
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                </div>
+                                <div class="stat-label">Average Score</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -796,210 +1636,580 @@
 </div>
 
 <script>
-function switchTab(tabName) {
-    // Remove active class from all tabs and panes
-    document.querySelectorAll('.modern-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelectorAll('.tab-pane').forEach(pane => {
-        pane.classList.remove('active');
-    });
-    
-    // Add active class to clicked tab and corresponding pane
-    event.target.classList.add('active');
-    document.getElementById(tabName).classList.add('active');
-    
-    // Add loading animation to new content
-    const newContent = document.getElementById(tabName);
-    const cards = newContent.querySelectorAll('.modern-card, .modern-table, .empty-state, .history-button-container');
-    cards.forEach((card, index) => {
-        card.style.animation = 'none';
-        setTimeout(() => {
-            card.style.animation = `loadIn 0.6s ease forwards`;
-            card.style.animationDelay = `${index * 0.1}s`;
-        }, 10);
-    });
-}
+/* Full dashboard script: view/tab switching, filtering with Apply button + overlay, particles, animations.
+   Defensive, avoids using implicit `event` and keeps behavior consistent across browsers.
+*/
+(function () {
+    'use strict';
 
-// Add loading animations on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const loadingElements = document.querySelectorAll('.loading');
-    loadingElements.forEach((element, index) => {
-        element.style.animationDelay = `${index * 0.2}s`;
-    });
-    
-    // Dynamic particle generation
-    function createDynamicParticle() {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.width = Math.random() * 6 + 2 + 'px';
-        particle.style.height = particle.style.width;
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.animationDuration = Math.random() * 4 + 4 + 's';
-        particle.style.animationDelay = Math.random() * 2 + 's';
-        
-        document.querySelector('.particles').appendChild(particle);
-        
-        setTimeout(() => {
-            particle.remove();
-        }, 10000);
+    // ---------- State ----------
+    let currentView = 'grid'; // 'grid' or 'list'
+
+    // ---------- View & Tab switching (safe event usage) ----------
+    function switchView(viewType, evt) {
+        if (!viewType) return;
+        currentView = viewType;
+
+        // Update view buttons
+        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+        if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.add('active');
+        } else {
+            // fallback - select by onclick attr
+            const btn = document.querySelector('.view-btn[onclick*="' + viewType + '"]');
+            if (btn) btn.classList.add('active');
+        }
+
+        // Switch views for current active tab
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (!activeTab) return;
+        const gridView = activeTab.querySelector('.exam-grid-view');
+        const listView = activeTab.querySelector('.exam-list-view');
+
+        if (gridView && listView) {
+            if (viewType === 'grid') {
+                gridView.classList.add('active-view');
+                listView.classList.remove('active-view');
+                gridView.style.display = 'grid';
+                listView.style.display = 'none';
+            } else {
+                gridView.classList.remove('active-view');
+                listView.classList.add('active-view');
+                gridView.style.display = 'none';
+                listView.style.display = 'block';
+            }
+
+            // Animate visible items
+            const activeView = viewType === 'grid' ? gridView : listView;
+            const items = activeView.querySelectorAll('.exam-card, .list-item');
+            items.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                    item.style.transition = 'all 0.3s ease';
+                }, index * 50);
+            });
+        }
     }
 
-    // Generate new particles periodically
-    setInterval(createDynamicParticle, 3000);
-    
-    // Enhanced hover effects for cards
-    document.querySelectorAll('.modern-card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-15px) scale(1.03)';
+    function switchTab(tabName, evt) {
+        if (!tabName) return;
+        // Remove active class from all tabs and panes
+        document.querySelectorAll('.modern-tab').forEach(tab => {
+            tab.classList.remove('active');
+            tab.setAttribute('aria-selected', 'false');
+            tab.setAttribute('tabindex', '-1');
         });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+            pane.setAttribute('aria-hidden', 'true');
         });
-    });
-    
-    // Smooth scroll for any anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+
+        // Add active class to clicked tab and corresponding pane
+        if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.add('active');
+            evt.currentTarget.setAttribute('aria-selected', 'true');
+            evt.currentTarget.setAttribute('tabindex', '0');
+        } else {
+            const tabEl = document.querySelector('.modern-tab[onclick*="' + tabName + '"]');
+            if (tabEl) {
+                tabEl.classList.add('active');
+                tabEl.setAttribute('aria-selected', 'true');
+                tabEl.setAttribute('tabindex', '0');
+            }
+        }
+
+        const pane = document.getElementById(tabName);
+        if (pane) {
+            pane.classList.add('active');
+            pane.setAttribute('aria-hidden', 'false');
+        }
+
+        // Show/hide view toggle based on tab
+        const viewToggle = document.getElementById('viewToggleContainer');
+        if (tabName === 'upcoming' || tabName === 'ongoing') {
+            viewToggle.classList.add('show');
+
+            // Apply current view to new tab
+            const newTab = document.getElementById(tabName);
+            const gridView = newTab.querySelector('.exam-grid-view');
+            const listView = newTab.querySelector('.exam-list-view');
+
+            if (gridView && listView) {
+                if (currentView === 'grid') {
+                    gridView.classList.add('active-view');
+                    listView.classList.remove('active-view');
+                    gridView.style.display = 'grid';
+                    listView.style.display = 'none';
+                } else {
+                    gridView.classList.remove('active-view');
+                    listView.classList.add('active-view');
+                    gridView.style.display = 'none';
+                    listView.style.display = 'block';
+                }
+            }
+        } else {
+            viewToggle.classList.remove('show');
+        }
+
+        // Update exam counter and animate new content
+        updateExamCounter(tabName);
+
+        const newContent = document.getElementById(tabName);
+        if (newContent) {
+            const cards = newContent.querySelectorAll('.exam-card, .modern-table, .empty-state, .results-history-section');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                    card.style.transition = 'all 0.6s ease';
+                }, index * 100);
+            });
+        }
+    }
+
+    // ---------- Counter ----------
+    function updateExamCounter(tabName) {
+        const examCounter = document.getElementById('examCount');
+        const activeTab = document.getElementById(tabName);
+        if (!examCounter || !activeTab) return;
+
+        const examCards = activeTab.querySelectorAll('.exam-card:not(.filtered-out)');
+        const count = examCards.length;
+        const tabText = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+
+        if (count === 0) {
+            examCounter.textContent = `No ${tabText.toLowerCase()} exams`;
+        } else if (count === 1) {
+            examCounter.textContent = `1 ${tabText.toLowerCase().slice(0, -1)} exam`;
+        } else {
+            examCounter.textContent = `${count} ${tabText.toLowerCase()} exams`;
+        }
+    }
+
+    // Helper used by filtering to set count when cards list provided
+    function updateExamCounterFromCards(visibleCount, activeTab) {
+        const examCounter = document.getElementById('examCount');
+        if (!examCounter || !activeTab) return;
+        // get tab name
+        const tabName = activeTab.id || '';
+        const readable = tabName ? (tabName.charAt(0).toUpperCase() + tabName.slice(1)) : 'Exams';
+        if (visibleCount === 0) {
+            examCounter.textContent = `No ${readable.toLowerCase()} exams`;
+        } else if (visibleCount === 1) {
+            examCounter.textContent = `1 ${readable.toLowerCase().slice(0, -1)} exam`;
+        } else {
+            examCounter.textContent = `${visibleCount} ${readable.toLowerCase()} exams`;
+        }
+    }
+
+    // ---------- Filter UI creation & logic ----------
+    function ensureFilterUI() {
+        const viewControls = document.querySelector('.view-toggle-container');
+        if (!viewControls) return null;
+
+        // If filter already exists, return references
+        const existing = viewControls.querySelector('.filter-controls');
+        if (existing) {
+            return {
+                container: existing,
+                input: existing.querySelector('.exam-search-input'),
+                applyBtn: existing.querySelector('.filter-apply-btn')
+            };
+        }
+
+        // Build container
+        const container = document.createElement('div');
+        container.className = 'filter-controls';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Search exams...';
+        input.className = 'exam-search-input';
+        input.id = 'dashboardExamSearch';
+
+        const applyBtn = document.createElement('button');
+        applyBtn.type = 'button';
+        applyBtn.className = 'filter-apply-btn';
+        applyBtn.innerHTML = '<span class="apply-text">Apply</span>';
+
+        container.appendChild(input);
+        container.appendChild(applyBtn);
+
+        viewControls.appendChild(container);
+
+        // Apply handlers
+        applyBtn.addEventListener('click', () => {
+            runFilterWithOverlay();
+        });
+
+        // Enter key triggers apply
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                runFilterWithOverlay();
             }
         });
-    });
-    
-    // Add pulse effect to live badges
-    setInterval(() => {
-        document.querySelectorAll('.status-badge.live').forEach(badge => {
-            badge.style.transform = 'scale(1.1)';
-            setTimeout(() => {
-                badge.style.transform = 'scale(1)';
-            }, 300);
+
+        // Live search (optional quick feedback) - small debounce
+        let liveTimeout = null;
+        input.addEventListener('input', () => {
+            if (liveTimeout) clearTimeout(liveTimeout);
+            liveTimeout = setTimeout(() => {
+                // only show quick local filtering (no overlay) if user isn't pressing apply
+                applyClientFilter(input.value, { overlay: false, animate: true });
+            }, 350);
         });
-    }, 3000);
-    
-    // Intersection Observer for scroll animations
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
+
+        return { container, input, applyBtn };
+    }
+
+    // Create or get overlay inside active pane
+    function getOrCreateOverlayForActivePane() {
+        const activePane = document.querySelector('.tab-pane.active');
+        if (!activePane) return null;
+        let overlay = activePane.querySelector('.filter-loading-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'filter-loading-overlay';
+            overlay.innerHTML = '<div class="filter-loading-box"><span class="spinner-lg" aria-hidden="true"></span><span>Applying filter...</span></div>';
+            // Ensure parent has position set for overlay absolute to work
+            if (!activePane.style.position) {
+                // only set if not explicitly set
+                activePane.style.position = 'relative';
+            }
+            activePane.appendChild(overlay);
+        }
+        return overlay;
+    }
+
+    // Show overlay, run filter, hide overlay
+    function runFilterWithOverlay() {
+        const ui = ensureFilterUI();
+        if (!ui) return;
+        const term = (ui.input.value || '').trim();
+
+        const overlay = getOrCreateOverlayForActivePane();
+        if (!overlay) {
+            // fallback - just apply filter
+            applyClientFilter(term, { overlay: false, animate: true });
+            return;
+        }
+
+        // Show overlay
+        overlay.classList.add('visible');
+
+        // Disable apply button and show spinner inside it
+        const applyBtn = ui.applyBtn;
+        applyBtn.setAttribute('disabled', 'true');
+        const originalText = applyBtn.querySelector('.apply-text');
+        if (originalText) originalText.style.display = 'none';
+        let spinner = applyBtn.querySelector('.btn-spinner');
+        if (!spinner) {
+            spinner = document.createElement('span');
+            spinner.className = 'btn-spinner';
+            applyBtn.appendChild(spinner);
+        }
+
+        // Simulate short async op to ensure overlay visible (but filtering is immediate).
+        // Keep minimal delay for UX; we still do DOM updates synchronously.
+        setTimeout(() => {
+            applyClientFilter(term, { overlay: true, animate: true });
+
+            // Slight delay to let animation be visible (keeps UX clear)
+            setTimeout(() => {
+                overlay.classList.remove('visible');
+                applyBtn.removeAttribute('disabled');
+                if (originalText) originalText.style.display = '';
+                if (spinner) spinner.remove();
+            }, 280); // 280ms after filter applied
+        }, 120); // 120ms to ensure overlay appears before quick DOM mutation
+    }
+
+    // Core client-side filter function
+    // options: { overlay: boolean, animate: boolean }
+    function applyClientFilter(searchTerm, options) {
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (!activeTab) return;
+        const term = (searchTerm || '').toLowerCase().trim();
+        const gridContainer = activeTab.querySelector('.exam-grid-view');
+        const listContainer = activeTab.querySelector('.exam-list-view');
+
+        let cards = [];
+        if (gridContainer) cards = cards.concat(Array.from(gridContainer.querySelectorAll('.exam-card')));
+        if (listContainer) cards = cards.concat(Array.from(listContainer.querySelectorAll('.list-item')));
+
+        if (!term) {
+            // show all
+            cards.forEach(c => {
+                c.classList.remove('filtered-out');
+            });
+            updateExamCounterFromCards(Array.from(cards).filter(c => !c.classList.contains('filtered-out')).length, activeTab);
+            return;
+        }
+
+        let visibleCount = 0;
+        cards.forEach(card => {
+            // pick title and description heuristically
+            const titleEl = card.querySelector('strong') || card.querySelector('.card-title') || card.querySelector('.exam-name-cell strong');
+            const descEl = card.querySelector('.exam-description') || card.querySelector('.exam-description-short') || card.querySelector('.exam-info span');
+
+            const name = titleEl ? titleEl.textContent.toLowerCase() : '';
+            const desc = descEl ? descEl.textContent.toLowerCase() : '';
+
+            const matches = name.includes(term) || desc.includes(term);
+
+            if (matches) {
+                card.classList.remove('filtered-out');
+                visibleCount++;
+                if (options && options.animate) {
+                    card.style.transition = 'all 0.25s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0) scale(1)';
+                } else {
+                    card.style.opacity = '';
+                    card.style.transform = '';
+                }
+            } else {
+                card.classList.add('filtered-out');
+                if (options && options.animate) {
+                    card.style.transition = 'all 0.18s ease';
+                }
+            }
+        });
+
+        updateExamCounterFromCards(visibleCount, activeTab);
+    }
+
+    // ---------- Initial UI wiring & other enhancements ----------
+    function init() {
+        // Wire up tab and view control buttons to safer event-driven handlers
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // determine which view from onclick attribute or data
+                const onclick = btn.getAttribute('onclick') || '';
+                const matches = onclick.match(/switchView\(['"]([^'"]+)['"]\)/);
+                const view = matches ? matches[1] : (btn.title && btn.title.toLowerCase().includes('grid') ? 'grid' : 'list');
+                switchView(view, e);
+            });
+        });
+
+        document.querySelectorAll('.modern-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                // determine which tab from onclick attribute
+                const onclick = tab.getAttribute('onclick') || '';
+                const matches = onclick.match(/switchTab\(['"]([^'"]+)['"]\)/);
+                const tabName = matches ? matches[1] : null;
+                if (tabName) switchTab(tabName, e);
+            });
+        });
+
+        // Initialize exam counter for initial active tab
+        const initialActive = document.querySelector('.tab-pane.active');
+        if (initialActive) updateExamCounter(initialActive.id || 'upcoming');
+
+        // Build filter UI
+        ensureFilterUI();
+
+        // Add loading animations on page load
+        const loadingElements = document.querySelectorAll('.loading');
+        loadingElements.forEach((element, index) => {
+            element.style.animationDelay = `${index * 0.2}s`;
+        });
+
+        // Dynamic particle generation
+        function createDynamicParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.width = Math.random() * 6 + 2 + 'px';
+            particle.style.height = particle.style.width;
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animationDuration = Math.random() * 4 + 4 + 's';
+            particle.style.animationDelay = Math.random() * 2 + 's';
+
+            document.querySelector('.particles').appendChild(particle);
+
+            setTimeout(() => {
+                particle.remove();
+            }, 10000);
+        }
+        setInterval(createDynamicParticle, 3000);
+
+        // Enhanced hover effects for cards
+        document.querySelectorAll('.modern-card').forEach(card => {
+            card.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-15px) scale(1.03)';
+            });
+
+            card.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case '1':
+                        e.preventDefault();
+                        const t1 = document.querySelector('.modern-tab[onclick*="upcoming"]');
+                        if (t1) t1.click();
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        const t2 = document.querySelector('.modern-tab[onclick*="ongoing"]');
+                        if (t2) t2.click();
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        const t3 = document.querySelector('.modern-tab[onclick*="completed"]');
+                        if (t3) t3.click();
+                        break;
+                    case '4':
+                        e.preventDefault();
+                        const t4 = document.querySelector('.modern-tab[onclick*="history"]');
+                        if (t4) t4.click();
+                        break;
+                    case 'g':
+                        e.preventDefault();
+                        if (currentView !== 'grid') {
+                            const gv = document.querySelector('.view-btn[onclick*="grid"]');
+                            if (gv) gv.click();
+                        }
+                        break;
+                    case 'l':
+                        e.preventDefault();
+                        if (currentView !== 'list') {
+                            const lv = document.querySelector('.view-btn[onclick*="list"]');
+                            if (lv) lv.click();
+                        }
+                        break;
+                }
+            }
+        });
+
+        // Add pulse effect to live badges
+        setInterval(() => {
+            document.querySelectorAll('.status-badge.live').forEach(badge => {
+                badge.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    badge.style.transform = 'scale(1)';
+                }, 300);
+            });
+        }, 3000);
+
+        // Intersection Observer for scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0) scale(1)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.modern-card, .modern-table, .empty-state').forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(30px) scale(0.95)';
+            element.style.transition = `all 0.8s ease ${index * 0.1}s`;
+            try { observer.observe(element); } catch (err) { /* ignore */ }
+        });
+
+        // Real-time clock for live badges
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.querySelectorAll('.status-badge.live').forEach(badge => {
+                if (!badge.dataset.originalText) badge.dataset.originalText = badge.textContent;
+                if (Math.floor(now.getSeconds() / 5) % 2 === 0) {
+                    badge.textContent = 'LIVE';
+                } else {
+                    badge.textContent = timeString.substring(0, 5);
+                }
+            });
+        }
+        setInterval(updateClock, 1000);
+
+        // Enhanced button click effects (ripple)
+        document.querySelectorAll('.action-btn, .action-btn-compact').forEach(btn => {
+            btn.style.position = 'relative';
+            btn.addEventListener('click', function (e) {
+                if (!this.classList.contains('disabled')) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+
+                    ripple.style.width = ripple.style.height = size + 'px';
+                    ripple.style.left = x + 'px';
+                    ripple.style.top = y + 'px';
+                    ripple.classList.add('ripple');
+
+                    this.appendChild(ripple);
+                    setTimeout(() => ripple.remove(), 600);
+                }
+            });
+        });
+
+        // Accessibility improvements
+        document.querySelectorAll('.view-btn').forEach((btn, index) => {
+            btn.setAttribute('aria-label', btn.title || '');
+            btn.setAttribute('tabindex', index === 0 ? '0' : '-1');
+        });
+
+        document.querySelectorAll('.modern-tab').forEach((tab, index) => {
+            tab.setAttribute('role', 'tab');
+            tab.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+        });
+
+        document.querySelectorAll('.tab-pane').forEach((pane, index) => {
+            pane.setAttribute('role', 'tabpanel');
+            pane.setAttribute('aria-hidden', index === 0 ? 'false' : 'true');
+        });
+
+        // Show view toggle for initial tab if it has exams
+        const initialTab = document.querySelector('.tab-pane.active');
+        const hasExams = initialTab && initialTab.querySelectorAll('.exam-card').length > 0;
+        if (hasExams && (initialTab.id === 'upcoming' || initialTab.id === 'ongoing')) {
+            document.getElementById('viewToggleContainer').classList.add('show');
+        }
+    }
+
+    // Init on DOMContentLoaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // Expose functions to global for inline onclick attributes present in template
+    window.switchView = function(viewType) {
+        // find the button element optionally (best-effort)
+        const btn = document.querySelector('.view-btn[onclick*="' + viewType + '"]');
+        switchView(viewType, btn ? { currentTarget: btn } : null);
+    };
+    window.switchTab = function(tabName) {
+        const tab = document.querySelector('.modern-tab[onclick*="' + tabName + '"]');
+        switchTab(tabName, tab ? { currentTarget: tab } : null);
     };
 
-    const observer = new IntersectionObserver(function(entries) {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0) scale(1)';
-            }
-        });
-    }, observerOptions);
+    // Also expose a programmatic applyFilter (if server wants to trigger)
+    window.applyDashboardFilter = function (term) {
+        applyClientFilter(term || '', { overlay: true, animate: true });
+    };
 
-    // Observe all cards for scroll animations
-    document.querySelectorAll('.modern-card, .modern-table, .empty-state').forEach((element, index) => {
-        element.style.opacity = '0';
-        element.style.transform = 'translateY(30px) scale(0.95)';
-        element.style.transition = `all 0.8s ease ${index * 0.1}s`;
-        observer.observe(element);
-    });
-});
-
-// Add keyboard navigation for tabs
-document.addEventListener('keydown', function(e) {
-    const tabs = document.querySelectorAll('.modern-tab');
-    const activeTab = document.querySelector('.modern-tab.active');
-    const currentIndex = Array.from(tabs).indexOf(activeTab);
-    
-    if (e.key === 'ArrowRight' && currentIndex < tabs.length - 1) {
-        tabs[currentIndex + 1].click();
-    } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-        tabs[currentIndex - 1].click();
-    }
-});
-
-// Add real-time clock for ongoing exams
-function updateClock() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString();
-    
-    document.querySelectorAll('.status-badge.live').forEach(badge => {
-        if (!badge.dataset.originalText) {
-            badge.dataset.originalText = badge.textContent;
-        }
-        
-        // Toggle between "LIVE" and current time every 5 seconds
-        if (Math.floor(now.getSeconds() / 5) % 2 === 0) {
-            badge.textContent = 'LIVE';
-        } else {
-            badge.textContent = timeString.substring(0, 5); // Show only HH:MM
-        }
-    });
-}
-
-setInterval(updateClock, 1000);
-
-// Add success animation for completed actions
-function showSuccessAnimation(element) {
-    element.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-    element.style.transform = 'scale(1.1)';
-    
-    setTimeout(() => {
-        element.style.background = '';
-        element.style.transform = 'scale(1)';
-    }, 500);
-}
-
-// Enhanced button click effects
-document.querySelectorAll('.action-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        if (!this.classList.contains('disabled')) {
-            // Create ripple effect
-            const ripple = document.createElement('span');
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
-            
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            ripple.classList.add('ripple');
-            
-            this.appendChild(ripple);
-            
-            setTimeout(() => {
-                ripple.remove();
-            }, 600);
-        }
-    });
-});
-
-// Add CSS for ripple effect
-const rippleCSS = `
-.ripple {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.6);
-    transform: scale(0);
-    animation: ripple-animation 0.6s linear;
-    pointer-events: none;
-}
-
-@keyframes ripple-animation {
-    to {
-        transform: scale(4);
-        opacity: 0;
-    }
-}
-`;
-
-const style = document.createElement('style');
-style.textContent = rippleCSS;
-document.head.appendChild(style);
+})();
 </script>
 
 {% endblock %}
