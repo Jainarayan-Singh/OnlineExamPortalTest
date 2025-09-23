@@ -3,6 +3,7 @@
 <head>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.png') }}">
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - {% block title %}{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
@@ -473,21 +474,317 @@
     .loading {
       animation: pulse 1.5s ease-in-out infinite;
     }
+
+    /* Mobile Toggle Button */
+    .mobile-menu-toggle {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1001;
+      background: var(--brand-gradient);
+      border: none;
+      border-radius: 12px;
+      width: 50px;
+      height: 50px;
+      color: white;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .mobile-menu-toggle:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .mobile-menu-toggle:active {
+      transform: scale(0.95);
+    }
+
+    /* Mobile Overlay */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      backdrop-filter: blur(4px);
+    }
+
+    .mobile-overlay.active {
+      display: block;
+    }
     
-    /* Responsive improvements */
+    /* Enhanced Mobile Responsive Styles */
     @media (max-width: 768px) {
-      .content-wrap {
-        padding: 20px;
+      /* Show mobile menu toggle */
+      .mobile-menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
-      
+
+      /* Layout adjustments */
+      .d-flex {
+        flex-direction: column;
+      }
+
+      /* Sidebar mobile styles */
       .sidebar {
-        min-width: 260px;
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        border-radius: 0 15px 15px 0;
       }
-      
+
+      .sidebar.mobile-open {
+        left: 0;
+      }
+
+      /* Content adjustments */
+      .content-wrap {
+        padding: 80px 20px 20px 20px;
+        width: 100%;
+        min-height: calc(100vh - 80px);
+      }
+
+      /* Navigation improvements */
+      .sidebar .nav-link {
+        padding: 16px 20px;
+        font-size: 1rem;
+        border-radius: 12px;
+        margin: 6px 12px;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+      }
+
+      .sidebar .nav-link i {
+        width: 24px;
+        text-align: center;
+        margin-right: 12px;
+      }
+
+      /* Brand section mobile */
+      .sidebar .d-flex.align-items-center.mb-4 {
+        padding: 24px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 20px;
+      }
+
+      /* Form controls mobile optimization */
+      .form-control, .form-select {
+        padding: 16px 18px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 12px;
+      }
+
+      /* Button improvements */
+      .btn {
+        padding: 14px 20px;
+        font-size: 1rem;
+        min-height: 48px;
+        border-radius: 12px;
+      }
+
+      /* Card improvements */
       .card-body {
         padding: 20px;
       }
-    }   
+
+      /* Table responsiveness */
+      .table {
+        font-size: 0.9rem;
+      }
+
+      .table thead th,
+      .table tbody td {
+        padding: 12px 16px;
+      }
+
+      /* Alert improvements */
+      .alert {
+        margin: 15px 0;
+        padding: 16px 20px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+      }
+
+      /* Modal improvements */
+      .modal-dialog {
+        margin: 20px;
+        max-width: calc(100% - 40px);
+      }
+
+      .modal-content {
+        border-radius: 20px;
+      }
+
+      /* Footer adjustments */
+      .professional-footer {
+        padding: 1.5rem 0;
+      }
+
+      .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+      }
+
+      .footer-links {
+        justify-content: center;
+        gap: 1.5rem;
+      }
+
+      .footer-social {
+        justify-content: center;
+      }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 576px) {
+      .sidebar {
+        width: 100%;
+        left: -100%;
+        border-radius: 0;
+      }
+
+      .content-wrap {
+        padding: 70px 15px 15px 15px;
+      }
+
+      .mobile-menu-toggle {
+        width: 45px;
+        height: 45px;
+        top: 15px;
+        left: 15px;
+        font-size: 1.1rem;
+      }
+
+      .sidebar .nav-link {
+        padding: 18px 20px;
+        font-size: 1.05rem;
+        margin: 8px 15px;
+      }
+
+      .form-control, .form-select {
+        padding: 18px 16px;
+      }
+
+      .btn {
+        padding: 16px 18px;
+        min-height: 52px;
+      }
+
+      .card-header {
+        padding: 16px 18px;
+        font-size: 1rem;
+      }
+
+      .card-body {
+        padding: 18px;
+      }
+
+      .table {
+        font-size: 0.85rem;
+      }
+
+      .table thead th,
+      .table tbody td {
+        padding: 10px 12px;
+      }
+
+      /* Compact brand section for very small screens */
+      .sidebar .d-flex.align-items-center.mb-4 {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+      }
+
+      .sidebar .d-flex.align-items-center.mb-4 .bg-white {
+        margin-right: 0;
+        margin-bottom: 8px;
+      }
+
+      .brand-badge {
+        font-size: 1rem;
+      }
+    }
+
+    /* Landscape phone optimization */
+    @media (max-width: 768px) and (orientation: landscape) {
+      .content-wrap {
+        padding: 60px 20px 20px 20px;
+      }
+
+      .mobile-menu-toggle {
+        top: 15px;
+        left: 15px;
+      }
+    }
+
+    /* Focus states for accessibility */
+    @media (max-width: 768px) {
+      .mobile-menu-toggle:focus {
+        outline: 3px solid rgba(102, 126, 234, 0.3);
+        outline-offset: 2px;
+      }
+
+      .sidebar .nav-link:focus {
+        outline: 2px solid rgba(255, 255, 255, 0.3);
+        outline-offset: 2px;
+      }
+
+      /* Hide scrollbar but keep functionality */
+      .sidebar::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .sidebar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+      }
+    }
+
+    /* Animation for menu toggle icon */
+    @keyframes menuToggle {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(180deg); }
+    }
+
+    .mobile-menu-toggle.active {
+      animation: menuToggle 0.3s ease;
+    }
+
+    /* Safe area insets for newer phones */
+    @supports (padding: max(0px)) {
+      @media (max-width: 768px) {
+        .mobile-menu-toggle {
+          top: max(20px, env(safe-area-inset-top));
+          left: max(20px, env(safe-area-inset-left));
+        }
+
+        .content-wrap {
+          padding-top: max(80px, calc(env(safe-area-inset-top) + 60px));
+          padding-left: max(20px, env(safe-area-inset-left));
+          padding-right: max(20px, env(safe-area-inset-right));
+        }
+      }
+    }
   </style>
 </head>
 <body>
@@ -649,6 +946,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- LaTeX Editor Script -->
 <script>
 (function(){
   const btn = document.getElementById('open-latex-editor-admin-base');
@@ -710,6 +1009,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }, false);
 })();
 </script>
+
+<!-- Requests Badge Script -->
 <script>
 // Auto-update requests badge
 document.addEventListener('DOMContentLoaded', function() {
@@ -737,5 +1038,128 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- Mobile Menu Functionality Script -->
+<script>
+// Mobile Menu Functionality
+(function() {
+    'use strict';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeMobileMenu();
+    });
+
+    function initializeMobileMenu() {
+        createMobileElements();
+        setupEventListeners();
+        handleResize();
+    }
+
+    function createMobileElements() {
+        if (!document.querySelector('.mobile-menu-toggle')) {
+            const toggleButton = document.createElement('button');
+            toggleButton.className = 'mobile-menu-toggle';
+            toggleButton.innerHTML = '<i class="fas fa-bars"></i>';
+            toggleButton.setAttribute('aria-label', 'Toggle navigation menu');
+            toggleButton.setAttribute('aria-expanded', 'false');
+            document.body.appendChild(toggleButton);
+        }
+
+        if (!document.querySelector('.mobile-overlay')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'mobile-overlay';
+            document.body.appendChild(overlay);
+        }
+    }
+
+    function setupEventListeners() {
+        const toggleButton = document.querySelector('.mobile-menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.mobile-overlay');
+        const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
+
+        if (toggleButton && sidebar && overlay) {
+            toggleButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleMobileMenu();
+            });
+
+            overlay.addEventListener('click', function() {
+                closeMobileMenu();
+            });
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    setTimeout(closeMobileMenu, 150);
+                });
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+                    closeMobileMenu();
+                }
+            });
+
+            window.addEventListener('resize', handleResize);
+        }
+    }
+
+    function toggleMobileMenu() {
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (sidebar.classList.contains('mobile-open')) {
+            closeMobileMenu();
+        } else {
+            openMobileMenu();
+        }
+    }
+
+    function openMobileMenu() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.mobile-overlay');
+        const toggleButton = document.querySelector('.mobile-menu-toggle');
+
+        sidebar.classList.add('mobile-open');
+        overlay.classList.add('active');
+        toggleButton.classList.add('active');
+        toggleButton.innerHTML = '<i class="fas fa-times"></i>';
+        toggleButton.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.mobile-overlay');
+        const toggleButton = document.querySelector('.mobile-menu-toggle');
+
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+        toggleButton.classList.remove('active');
+        toggleButton.innerHTML = '<i class="fas fa-bars"></i>';
+        toggleButton.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
+
+    function handleResize() {
+        const sidebar = document.querySelector('.sidebar');
+        const toggleButton = document.querySelector('.mobile-menu-toggle');
+
+        if (window.innerWidth > 768) {
+            if (sidebar && sidebar.classList.contains('mobile-open')) {
+                closeMobileMenu();
+            }
+            if (toggleButton) {
+                toggleButton.style.display = 'none';
+            }
+        } else {
+            if (toggleButton) {
+                toggleButton.style.display = 'flex';
+            }
+        }
+    }
+
+})();
+</script>
+
 </body>
 </html>

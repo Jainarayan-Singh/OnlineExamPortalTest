@@ -246,7 +246,6 @@
     margin-bottom: 8px;
   }
 
-  /* Fix modal backdrop issues */
   .modal {
     z-index: 1055;
   }
@@ -254,6 +253,271 @@
   .modal-backdrop {
     z-index: 1050;
   }
+
+/* MOBILE RESPONSIVE CSS - COMPLETELY REWRITTEN FOR MAXIMUM COMPATIBILITY */
+@media (max-width: 768px) {
+  /* Force mobile layout fixes with highest specificity */
+  body .page-header {
+    padding: 15px !important;
+    margin: -20px -20px 20px -20px !important;
+    border-radius: 0 0 15px 15px !important;
+    text-align: center !important;
+  }
+
+  body .page-title {
+    font-size: 1.4rem !important;
+    margin-bottom: 15px !important;
+    text-align: center !important;
+  }
+
+  body .page-header .d-flex {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 15px !important;
+  }
+
+  body .add-btn {
+    width: 100% !important;
+    max-width: 300px !important;
+    padding: 12px 20px !important;
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+  }
+
+  /* Container and card mobile fixes */
+  body .content-wrap {
+    padding: 80px 15px 20px 15px !important;
+  }
+
+  body .card {
+    margin: 0 -15px 20px -15px !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body .card-body {
+    padding: 0 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Table mobile optimization - Force horizontal scroll */
+  body .table.exams-table {
+    min-width: 900px !important;
+    font-size: 0.75rem !important;
+    margin: 0 !important;
+  }
+
+  body .exams-table thead th {
+    padding: 8px 4px !important;
+    font-size: 0.65rem !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    min-width: 80px !important;
+  }
+
+  body .exams-table tbody td {
+    padding: 8px 4px !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    min-width: 80px !important;
+  }
+
+  /* Table element mobile styling */
+  body .exam-id {
+    font-size: 0.55rem !important;
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
+  }
+
+  body .exam-name {
+    font-size: 0.7rem !important;
+    max-width: 100px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body .exam-date {
+    font-size: 0.55rem !important;
+    padding: 2px 4px !important;
+    display: block !important;
+    margin-bottom: 2px !important;
+  }
+
+  body .exam-time {
+    font-size: 0.55rem !important;
+  }
+
+  body .exam-duration {
+    font-size: 0.55rem !important;
+    padding: 2px 4px !important;
+  }
+
+  body .question-count {
+    font-size: 0.55rem !important;
+    padding: 2px 4px !important;
+    margin-bottom: 2px !important;
+  }
+
+  body .question-count + .small {
+    font-size: 0.5rem !important;
+  }
+
+  body .status-badge {
+    font-size: 0.55rem !important;
+    padding: 2px 6px !important;
+    border-radius: 8px !important;
+  }
+
+  body .instructions-cell {
+    max-width: 60px !important;
+    font-size: 0.6rem !important;
+  }
+
+  body .marks-info {
+    font-size: 0.6rem !important;
+  }
+
+  body .marks-positive, 
+  body .marks-negative {
+    font-size: 0.55rem !important;
+  }
+
+  /* Action buttons mobile */
+  body .action-buttons .btn {
+    padding: 4px 6px !important;
+    font-size: 0.6rem !important;
+    margin: 1px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+  }
+
+  body .action-buttons .btn i {
+    font-size: 0.6rem !important;
+  }
+
+  /* Modal mobile fixes */
+  body .modal-dialog {
+    margin: 10px !important;
+    max-width: calc(100% - 20px) !important;
+  }
+
+  body .modal-content {
+    border-radius: 15px !important;
+  }
+
+  body .modal-header,
+  body .modal-body,
+  body .modal-footer {
+    padding: 15px !important;
+  }
+
+  body .modal-title {
+    font-size: 1.1rem !important;
+  }
+
+  body .modal-footer {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  body .modal-footer .btn {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Form elements in modals */
+  body .modal .form-control,
+  body .modal .form-select {
+    font-size: 16px !important;
+    padding: 12px 15px !important;
+  }
+
+  body .modal .form-label {
+    font-size: 0.9rem !important;
+    margin-bottom: 5px !important;
+  }
+
+  body .modal .row .col-md-6,
+  body .modal .row .col-md-3,
+  body .modal .row .col-md-4,
+  body .modal .row .col-md-12 {
+    width: 100% !important;
+    padding: 0 !important;
+    margin-bottom: 15px !important;
+  }
+
+  body .modal textarea {
+    min-height: 80px !important;
+  }
+
+  body .form-text {
+    font-size: 0.75rem !important;
+  }
+
+  /* Scrollbar styling for mobile */
+  body .card-body::-webkit-scrollbar {
+    height: 8px !important;
+  }
+
+  body .card-body::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+  }
+
+  body .card-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1 !important;
+    border-radius: 4px !important;
+  }
+
+  /* Hide elements on very small screens */
+  @media (max-width: 576px) {
+    body .instructions-cell,
+    body .exams-table thead th:nth-child(7),
+    body .exams-table tbody td:nth-child(7) {
+      display: none !important;
+    }
+
+    body .exam-time {
+      display: none !important;
+    }
+
+    body .question-count + .small {
+      display: none !important;
+    }
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 575px) {
+  body .page-header {
+    padding: 12px !important;
+    margin: -15px -15px 15px -15px !important;
+  }
+
+  body .page-title {
+    font-size: 1.2rem !important;
+  }
+
+  body .exams-table thead th {
+    padding: 6px 3px !important;
+    font-size: 0.6rem !important;
+  }
+
+  body .exams-table tbody td {
+    padding: 6px 3px !important;
+    font-size: 0.65rem !important;
+  }
+
+  body .action-buttons .btn {
+    padding: 3px 4px !important;
+    font-size: 0.55rem !important;
+    min-width: 20px !important;
+    height: 20px !important;
+  }
+}
 </style>
 
 <div class="page-header">
@@ -522,6 +786,18 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   });
+
+  // Mobile enhancement - Force table wrapper if needed
+  if (window.innerWidth <= 768) {
+    const table = document.querySelector('.exams-table');
+    if (table && !table.closest('.table-responsive')) {
+      const cardBody = table.closest('.card-body');
+      if (cardBody) {
+        cardBody.style.overflowX = 'auto';
+        cardBody.style.webkitOverflowScrolling = 'touch';
+      }
+    }
+  }
 });
 </script>
 {% endblock %}
