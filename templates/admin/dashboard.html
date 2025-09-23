@@ -355,19 +355,111 @@
         </div>
       </div>
 
-      <div class="step">
+
+<div class="step">
         <div class="d-flex align-items-center mb-3">
           <span class="step-badge">5</span>
-          <h6>Publish</h6>
+          <h6>Configure Exam Attempts (Optional)</h6>
         </div>
         <div class="step-content">
-          When you're done with changes, open <span class="kbd">Publish</span> and press <span class="kbd">Publish</span>.  
-          This clears caches so students see the latest data.
-          <div class="warn mt-3">
-            <strong><i class="fas fa-exclamation-triangle me-1"></i> Important:</strong> If you skip Publish, students may not see your updates immediately.
+          Go to <span class="kbd">Manage Attempts</span> to set how many times each user can take an exam:
+          <ul class="mb-3 mt-2">
+            <li><strong>Max Attempts:</strong> Set when creating exam in <span class="mono">max_attempts</span> field</li>
+            <li><strong>Individual Control:</strong> Reset specific user attempts with <span class="kbd">Reset</span></li>
+            <li><strong>Adjust Attempts:</strong> Use <span class="kbd">+1</span> to add attempts or <span class="kbd">Amount</span> field for bulk changes</li>
+            <li><strong>Advanced Filters:</strong> Filter by user, exam, or status to manage attempts efficiently</li>
+          </ul>
+          <div class="tip">
+            <strong><i class="fas fa-lightbulb me-1"></i> Tip:</strong> You can set unlimited attempts by leaving <span class="mono">max_attempts</span> empty or setting to 0.
           </div>
         </div>
       </div>
+
+      <div class="step">
+        <div class="d-flex align-items-center mb-3">
+          <span class="step-badge">6</span>
+          <h6>LaTeX Editor for Advanced Questions</h6>
+        </div>
+        <div class="step-content">
+          Use <span class="kbd">Open LaTeX Editor</span> for creating complex mathematical equations and scientific content:
+          <ul class="mb-3 mt-2">
+            <li><strong>Mathematical Equations:</strong> Create complex formulas using LaTeX syntax</li>
+            <li><strong>Chemical Reactions:</strong> Use mhchem for chemistry equations</li>
+            <li><strong>Scientific Symbols:</strong> Access higher education symbols and notations</li>
+            <li><strong>Live Preview:</strong> See rendered output in real-time</li>
+            <li><strong>Direct Insert:</strong> LaTeX code automatically inserts into question text area</li>
+            <li><strong>Save & Load:</strong> Save frequently used LaTeX templates for reuse</li>
+          </ul>
+          <div class="tip">
+            <strong><i class="fas fa-lightbulb me-1"></i> Tip:</strong> The LaTeX editor opens in a popup window for side-by-side editing with your questions.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="d-flex align-items-center mb-3">
+          <span class="step-badge">7</span>
+          <h6>User Management & Requests</h6>
+        </div>
+        <div class="step-content">
+          Go to <span class="kbd">Users & Requests</span> to manage user access and permissions:
+          <ul class="mb-3 mt-2">
+            <li><strong>New Requests:</strong> Approve/deny user access requests with <span class="kbd">✔</span> / <span class="kbd">✖</span></li>
+            <li><strong>Requests History:</strong> View all processed requests and their status</li>
+            <li><strong>User Management:</strong> Update user roles individually or in bulk</li>
+            <li><strong>Bulk Actions:</strong> Select multiple users and change roles simultaneously</li>
+            <li><strong>Role Options:</strong> Assign user, admin, or both roles as needed</li>
+          </ul>
+          <div class="warn mt-3">
+            <strong><i class="fas fa-exclamation-triangle me-1"></i> Important:</strong> When denying requests, you must provide a reason for the decision.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="d-flex align-items-center mb-3">
+          <span class="step-badge">8</span>
+          <h6>Users Analytics & Tracking</h6>
+        </div>
+        <div class="step-content">
+          Access <span class="kbd">Users Analytics</span> for comprehensive performance tracking:
+          
+          <h6 class="mt-3 mb-2" style="color: #2d3748; font-weight: 600;">Results & Responses Tab:</h6>
+          <ul class="mb-3">
+            <li><strong>View Results:</strong> See exam scores, percentages, grades, and duration</li>
+            <li><strong>Detailed Responses:</strong> Check individual answers vs. correct answers</li>
+            <li><strong>Export Options:</strong> Download/print results and responses as PDF</li>
+            <li><strong>Advanced Filters:</strong> Filter by users, exams, date ranges</li>
+          </ul>
+
+          <h6 class="mb-2" style="color: #2d3748; font-weight: 600;">Analytics Tab:</h6>
+          <ul class="mb-3">
+            <li><strong>Visual Graphs:</strong> Score distribution and performance trends</li>
+            <li><strong>Exam Performance:</strong> Compare results across different exams</li>
+            <li><strong>User Activity:</strong> Track user engagement and participation</li>
+            <li><strong>Top Performers:</strong> Identify highest-scoring students</li>
+            <li><strong>Exam Statistics:</strong> Overall exam metrics and insights</li>
+            <li><strong>Recent Activity:</strong> Latest user actions and submissions</li>
+          </ul>
+          <div class="tip">
+            <strong><i class="fas fa-lightbulb me-1"></i> Tip:</strong> Use analytics to identify trends and improve exam quality over time.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="d-flex align-items-center mb-3">
+          <span class="step-badge">9</span>
+          <h6>Publish & Go Live</h6>
+        </div>
+        <div class="step-content">
+          When you're done with all changes, open <span class="kbd">Publish</span> and press <span class="kbd">Publish</span>.  
+          This clears caches so students see the latest data.
+          <div class="warn mt-3">
+            <strong><i class="fas fa-exclamation-triangle me-1"></i> Important:</strong> Always publish after making changes to exams, questions, or user permissions.
+          </div>
+        </div>
+      </div>      
     </div>
   </div>
 </div>
