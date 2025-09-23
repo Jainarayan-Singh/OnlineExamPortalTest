@@ -51,13 +51,12 @@ body { color: var(--muted-light); }
 }
 
 .question-card {
-  background: linear-gradient(135deg, #1f2937, #111827) !important; /* dark grey gradient */
+  background: linear-gradient(135deg, #1f2937, #111827) !important;
   border-radius: 14px;
   padding: 22px;
   box-shadow: var(--strong-shadow);
   color: var(--white);
 }
-
 
 .card { border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); background: transparent; color:var(--muted-light); }
 .card .card-header { background: linear-gradient(90deg, rgba(102,126,234,0.08), rgba(118,75,162,0.04)); color:#fff; font-weight:700; border-bottom:1px solid rgba(255,255,255,0.03); }
@@ -82,26 +81,41 @@ body { color: var(--muted-light); }
 .numeric-keypad {
   background: linear-gradient(180deg,#ffffff, #f6f9ff);
   border-radius:10px;
-  padding:16px; /* thoda padding badhaya */
+  padding:16px;
   border:1px solid rgba(0,0,0,0.08);
   box-shadow: 0 8px 30px rgba(2,6,23,0.2), 0 0 15px rgba(102,126,234,0.2);
-  max-width:280px; /* pehle 220px tha, ab bada */
+  max-width:280px;
 }
 
+/* ENHANCED NUMERIC DISPLAY - LARGER FONT SIZE */
 .numeric-display {
   background: #ffffff;
   border-radius:8px;
-  padding:8px;
+  padding:16px 12px; /* Increased padding */
   font-weight:800;
   font-family:'Courier New', monospace;
   color:#07203a;
-  min-height:44px;
+  min-height:60px; /* Increased from 44px */
+  font-size: 1.8rem; /* NEW: Much larger font size */
   border:2px solid rgba(102,126,234,0.4);
   display:flex;
   align-items:center;
   justify-content:center;
   gap:6px;
   box-shadow: 0 0 12px rgba(102,126,234,0.25);
+}
+
+/* Enhanced cursor for better visibility */
+#cursor {
+  font-size: 2rem !important; /* Larger cursor */
+  color: #667eea !important;
+  font-weight: 900 !important;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 .keypad-grid {
@@ -116,6 +130,7 @@ body { color: var(--muted-light); }
   background:#fff;
   border:1px solid rgba(0,0,0,0.1);
   font-weight:800;
+  font-size: 1.1rem; /* Slightly larger keypad buttons */
   transition: transform .12s ease, box-shadow .2s ease, border .2s ease;
   display:flex;
   align-items:center;
@@ -159,15 +174,14 @@ body { color: var(--muted-light); }
   box-shadow: 0 0 18px rgba(245,158,11,0.6);
 }
 
-
 .keypad-guide-card {
   background: linear-gradient(180deg,#ffffff,#f8fafc);
   border-radius: 10px;
   border: 1px solid rgba(0,0,0,0.08);
   box-shadow: 0 6px 20px rgba(2,6,23,0.15);
   color: #1e293b;
-  max-width:220px; /* chota kiya */
-  margin:auto; /* center align */
+  max-width:220px;
+  margin:auto;
 }
 
 .keypad-guide-grid {
@@ -193,7 +207,6 @@ body { color: var(--muted-light); }
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(59,130,246,0.35);
 }
-
 
 .btn {
   border-radius: 10px;
@@ -240,13 +253,6 @@ body { color: var(--muted-light); }
 .label-glow-green { display:inline-block; padding:.2rem .5rem; border-radius:8px; background: linear-gradient(90deg, rgba(6,178,133,0.06), rgba(6,178,133,0.02)); color:var(--white); font-weight:800; box-shadow: 0 8px 28px rgba(6,178,133,0.06); }
 .label-glow-teal { display:inline-block; padding:.2rem .5rem; border-radius:8px; background: linear-gradient(90deg, rgba(45,212,191,0.06), rgba(45,212,191,0.02)); color:var(--white); font-weight:800; box-shadow: 0 8px 28px rgba(45,212,191,0.06); }
 
-@media (max-width: 767px) {
-  .timer { font-size: .95rem; padding:10px; }
-  .numeric-keypad { max-width:190px; }
-  .question-card { padding:16px; }
-  .palette-link { width:36px; height:36px; }
-}
-
 .btn-outline-secondary.exam-navigation-btn {
   border: 1px solid rgba(102,126,234,0.4);
   color: #fff !important;
@@ -263,7 +269,6 @@ body { color: var(--muted-light); }
   box-shadow: 0 0 20px rgba(99,102,241,0.6);
   transform: translateY(-3px);
 }
-
 
 .btn-outline-danger {
   border: 1px solid rgba(239,68,68,0.5);
@@ -287,8 +292,7 @@ body { color: var(--muted-light); }
   transform: translateY(-3px);
 }
 
-
-/* Override only the light panel inside question-card (keeps global bg-light intact) */
+/* Override only the light panel inside question-card */
 .question-card .bg-light {
   background: linear-gradient(135deg, #0f1724 0%, #111827 100%) !important;
   border-radius: 10px;
@@ -297,7 +301,6 @@ body { color: var(--muted-light); }
   box-shadow: 0 8px 30px rgba(2,6,23,0.35) !important;
 }
 
-/* Make inner text / small elements visible */
 .question-card .bg-light a,
 .question-card .bg-light p,
 .question-card .bg-light small,
@@ -305,7 +308,6 @@ body { color: var(--muted-light); }
 .question-card .bg-light .form-check-label {
   color: var(--muted-light) !important;
 }
-
 
 .question-card .text-muted .text-success {
   color: #4ade80 !important;
@@ -319,27 +321,23 @@ body { color: var(--muted-light); }
   font-weight: 700;
 }
 
-/* Keep the buttons bright and maintain their styles */
 .question-card .bg-light .btn {
   background-clip: padding-box;
   color: #fff !important;
   box-shadow: 0 8px 30px rgba(0,0,0,0.25);
 }
 
-/* For the left chevron 'Previous' disabled look - keep legible */
 .question-card .bg-light .btn:disabled {
   background: rgba(255,255,255,0.03) !important;
   color: rgba(255,255,255,0.6) !important;
   border-color: rgba(255,255,255,0.04) !important;
 }
 
-/* If there are any light borders inside that panel, tone them down */
 .question-card .bg-light .border,
 .question-card .bg-light .rounded {
   border-color: rgba(255,255,255,0.03) !important;
 }
 
-/* small responsive tweak so right sticky cards remain readable */
 @media (min-width: 992px) {
   .question-card + .col-lg-4 .card,
   .question-card ~ .col-lg-4 .card {
@@ -347,7 +345,6 @@ body { color: var(--muted-light); }
   }
 }
 
-/* Hide scrollbars and browser UI */
 ::-webkit-scrollbar { display: none; }
 html, body { 
   margin: 0 !important; 
@@ -355,7 +352,6 @@ html, body {
   overflow-x: hidden; 
 }
 
-/* Image loading status improvements */
 .image-loading {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border: 2px dashed rgba(59,130,246,0.3);
@@ -374,7 +370,6 @@ html, body {
   to { opacity: 1; }
 }
 
-/* Ensure images are contained properly */
 .question-image img {
   max-width: 100%;
   height: auto;
@@ -382,6 +377,304 @@ html, body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+/* Enhanced palette link styling */
+.palette-link {
+  width: 42px;
+  height: 42px;
+  margin: 4px;
+  border-radius: 8px;
+  font-weight: 800;
+  position: relative;
+  color: #fff;
+  text-decoration: none;
+  overflow: visible;
+}
+
+/* COMPREHENSIVE MOBILE RESPONSIVE STYLES */
+@media (max-width: 768px) {
+  /* Container and layout */
+  body .container-fluid {
+    padding: 10px !important;
+  }
+
+  /* Header mobile adjustments */
+  body .header {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 10px !important;
+  }
+
+  body .header h3 {
+    font-size: 1.3rem !important;
+    margin-bottom: 5px !important;
+  }
+
+  body .badge-info {
+    font-size: 0.85rem !important;
+    padding: 6px 12px !important;
+  }
+
+  /* Timer mobile */
+  body .timer {
+    font-size: 0.9rem !important;
+    padding: 10px 12px !important;
+    text-align: center !important;
+  }
+
+  /* Question card mobile */
+  body .question-card {
+    padding: 15px !important;
+    margin-bottom: 20px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Question header mobile */
+  body .question-card .d-flex.justify-content-between {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 15px !important;
+  }
+
+  body .question-card h5 {
+    font-size: 1.1rem !important;
+    line-height: 1.4 !important;
+  }
+
+  body .question-card .badge {
+    font-size: 0.8rem !important;
+    padding: 6px 10px !important;
+  }
+
+  /* Options mobile */
+  body .option-container {
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 8px !important;
+  }
+
+  body .option-container .form-check-label {
+    font-size: 0.95rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* NUMERIC KEYPAD MOBILE OPTIMIZATION */
+  body .numeric-keypad {
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 12px !important;
+  }
+
+  body .numeric-display {
+    min-height: 70px !important; /* Even larger on mobile */
+    font-size: 2.2rem !important; /* Bigger font for mobile */
+    padding: 20px 15px !important;
+  }
+
+  body #cursor {
+    font-size: 2.4rem !important; /* Larger cursor for mobile */
+  }
+
+  body .keypad-btn {
+    font-size: 1.2rem !important; /* Larger keypad buttons */
+    min-height: 50px !important;
+    aspect-ratio: 1 !important;
+  }
+
+  body .keypad-grid {
+    gap: 10px !important;
+  }
+
+  /* Keypad guide mobile */
+  body .keypad-guide-card {
+    max-width: 100% !important;
+    margin-top: 15px !important;
+  }
+
+  body .keypad-guide-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  body .keypad-guide-item {
+    padding: 8px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Navigation buttons mobile */
+  body .question-card .bg-light {
+    padding: 15px !important;
+    margin: 15px -15px -15px -15px !important;
+  }
+
+  body .question-card .bg-light .d-flex {
+    flex-direction: column !important;
+    gap: 15px !important;
+  }
+
+  body .question-card .bg-light .d-flex > div:last-child {
+    width: 100% !important;
+  }
+
+  body .question-card .bg-light .d-flex > div:last-child .d-flex {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  body .exam-navigation-btn {
+    width: 100% !important;
+    padding: 12px 16px !important;
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+  }
+
+  /* Clear selection button mobile */
+  body #clearSelectionBtn {
+    width: 100% !important;
+    padding: 10px !important;
+    margin: 15px 0 !important;
+  }
+
+  /* Right sidebar mobile */
+  body .col-lg-4 {
+    margin-top: 20px !important;
+  }
+
+  body .card.sticky-top {
+    position: relative !important;
+    top: auto !important;
+  }
+
+  body .card-header {
+    padding: 12px 15px !important;
+    font-size: 0.9rem !important;
+  }
+
+  body .card-body {
+    padding: 15px !important;
+  }
+
+  /* Question palette mobile */
+  body .palette-link {
+    width: 36px !important;
+    height: 36px !important;
+    margin: 3px !important;
+    font-size: 0.85rem !important;
+  }
+
+  body .palette-link .fas.fa-image {
+    font-size: 6px !important;
+    top: 1px !important;
+    right: 1px !important;
+  }
+
+  body .palette-link .position-absolute span {
+    font-size: 5px !important;
+  }
+
+  /* Legend mobile */
+  body .legend-box {
+    margin-bottom: 8px !important;
+  }
+
+  body .legend-box small {
+    font-size: 0.8rem !important;
+  }
+
+  /* Image modal mobile */
+  body .modal-dialog.modal-xl {
+    margin: 10px !important;
+    max-width: calc(100% - 20px) !important;
+  }
+
+  body .modal-body {
+    padding: 15px !important;
+  }
+
+  body #modalImage {
+    max-height: 60vh !important;
+  }
+
+  /* Alert messages mobile */
+  body .alert {
+    padding: 12px 15px !important;
+    font-size: 0.9rem !important;
+    border-radius: 8px !important;
+  }
+
+  /* Row adjustments */
+  body .row {
+    margin: 0 -10px !important;
+  }
+
+  body .row > * {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 575px) {
+  body .container-fluid {
+    padding: 8px !important;
+  }
+
+  body .question-card {
+    padding: 12px !important;
+  }
+
+  body .header h3 {
+    font-size: 1.1rem !important;
+  }
+
+  body .timer {
+    font-size: 0.8rem !important;
+    padding: 8px 10px !important;
+  }
+
+  body .numeric-display {
+    min-height: 65px !important;
+    font-size: 2rem !important;
+    padding: 16px 12px !important;
+  }
+
+  body #cursor {
+    font-size: 2.2rem !important;
+  }
+
+  body .keypad-btn {
+    font-size: 1.1rem !important;
+    min-height: 45px !important;
+  }
+
+  body .palette-link {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.8rem !important;
+    margin: 2px !important;
+  }
+
+  body .exam-navigation-btn {
+    padding: 10px 12px !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+  body .question-card {
+    padding: 12px !important;
+  }
+
+  body .numeric-display {
+    min-height: 55px !important;
+    font-size: 1.8rem !important;
+  }
+
+  body .row {
+    align-items: flex-start !important;
+  }
+}
 </style>
 
 <div class="container-fluid mt-3">
@@ -641,7 +934,6 @@ html, body {
           <h6 class="mb-0"><i class="fas fa-th"></i> Question Navigation</h6>
         </div>
         <div class="card-body">
-<!-- REPLACE the question palette section in your exam_page.html with this enhanced version -->
 
 <div class="question-palette d-flex flex-wrap justify-content-center mb-3">
   {% for idx in range(total_questions) %}
@@ -726,39 +1018,8 @@ html, body {
   </div>
 </div>
 
-<style>
-/* Enhanced palette link styling */
-.palette-link {
-  width: 42px;
-  height: 42px;
-  margin: 4px;
-  border-radius: 8px;
-  font-weight: 800;
-  position: relative;
-  color: #fff;
-  text-decoration: none;
-  overflow: visible; /* Allow indicators to show */
-}
-
-/* Responsive adjustments */
-@media (max-width: 767px) {
-  .palette-link {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
-  }
-  
-  .palette-link .fas.fa-image {
-    font-size: 6px !important;
-    top: 1px !important;
-    right: 1px !important;
-  }
-  
-  .palette-link .position-absolute span {
-    font-size: 5px !important;
-  }
-}
-</style>
+        </div>
+      </div>
 
       <div class="card mt-3">
         <div class="card-header">
@@ -797,9 +1058,7 @@ html, body {
   </div>
 </div>
 {% endblock %}
-
 {% block scripts %}
-
 <script>
 let currentValue = '{{ selected_answer or "" }}';
 let hasDecimal = currentValue.includes('.');
@@ -928,14 +1187,22 @@ function clearSelection() {
     if (data.success) {
       document.querySelectorAll('input[name="answer"]').forEach(input => input.checked = false);
       const numericInput = document.querySelector('input[name="numeric_answer"]');
-      if (numericInput) { numericInput.value = ''; currentValue = ''; hasDecimal = false; updateDisplay(); }
+      if (numericInput) { 
+        numericInput.value = ''; 
+        currentValue = ''; 
+        hasDecimal = false; 
+        updateDisplay(); 
+      }
       updateOptionVisuals();
       updatePaletteStatus({{ current_index }}, 'visited');
       const btn = document.getElementById('clearSelectionBtn');
       const originalText = btn.innerHTML;
       btn.innerHTML = '<i class="fas fa-check"></i> Cleared!';
       btn.className = 'btn btn-success btn-sm';
-      setTimeout(()=>{ btn.innerHTML = originalText; btn.className = 'btn btn-outline-danger btn-sm'; }, 1600);
+      setTimeout(()=>{ 
+        btn.innerHTML = originalText; 
+        btn.className = 'btn btn-outline-danger btn-sm'; 
+      }, 1600);
     }
   })
   .catch(()=> alert('Error clearing selection. Please try again.'));
@@ -964,23 +1231,18 @@ function updateMetricsCounts() {
   document.getElementById('notVisitedCount').textContent = counts['not-visited'];
 }
 
-// REPLACE startTimer() and updateTimer() with this block
-// REPLACE the existing startTimer() function with this fixed version:
-
 function startTimer(forceFresh = false) {
-  const serverRemaining = Number({{ remaining_seconds|default(0) }}) || 0; // seconds from server
+  const serverRemaining = Number({{ remaining_seconds|default(0) }}) || 0;
   const examDurationMin = Number({{ exam.duration|default(0) }}) || 0;
   const expectedMax = (examDurationMin > 0) ? examDurationMin * 60 : 0;
 
   const legacyKey = 'exam_timer_{{ exam.id }}';
   const endKey = 'exam_timer_end_{{ exam.id }}';
-  const attemptKey = 'exam_attempt_{{ exam.id }}'; // NEW: Track attempt number
+  const attemptKey = 'exam_attempt_{{ exam.id }}';
   const now = Date.now();
 
-  // Get current attempt number from backend
   const currentAttempt = {{ active_attempt.attempt_number|default(1) if active_attempt else 1 }};
 
-  // migrate legacy sessionStorage -> localStorage if present (only if not forcing fresh)
   if (!forceFresh) {
     try {
       const legacy = sessionStorage.getItem(legacyKey);
@@ -1003,24 +1265,21 @@ function startTimer(forceFresh = false) {
     } catch(e){}
   }
 
-  // NEW: Check if this is a different attempt number
   let storedAttempt = null;
   try {
     storedAttempt = localStorage.getItem(attemptKey);
     if (storedAttempt && Number(storedAttempt) !== currentAttempt) {
       console.log(`New attempt detected: ${storedAttempt} -> ${currentAttempt}. Clearing old timer.`);
-      forceFresh = true; // Force fresh start for new attempt
+      forceFresh = true;
     }
   } catch(e){}
 
-  // Store current attempt number
   try {
     localStorage.setItem(attemptKey, String(currentAttempt));
   } catch(e){}
 
-  // read stored end (localStorage preferred) - but only if not forcing fresh start
   function readStoredEnd() {
-    if (forceFresh) return null; // Ignore stored end for fresh starts
+    if (forceFresh) return null;
     
     try {
       const raw = localStorage.getItem(endKey);
@@ -1035,12 +1294,10 @@ function startTimer(forceFresh = false) {
 
   let storedEnd = readStoredEnd();
   
-  // For fresh starts OR if stored end is invalid or past, set from serverRemaining/examDuration
   if (forceFresh || !storedEnd || storedEnd <= now) {
     let initial;
     
     if (forceFresh) {
-      // For fresh starts, clear any existing timer data and use full exam duration
       try { 
         localStorage.removeItem(endKey); 
         console.log('Cleared old timer data for fresh start');
@@ -1048,7 +1305,6 @@ function startTimer(forceFresh = false) {
       initial = expectedMax > 0 ? expectedMax : serverRemaining;
       console.log(`Fresh start: Using full duration of ${initial} seconds`);
     } else {
-      // For resume, use serverRemaining but clamp to expectedMax
       initial = serverRemaining;
       if (expectedMax > 0 && serverRemaining > expectedMax + 30) initial = expectedMax;
       console.log(`Resume: Using server remaining ${initial} seconds`);
@@ -1057,8 +1313,6 @@ function startTimer(forceFresh = false) {
     storedEnd = now + (initial * 1000);
     try { localStorage.setItem(endKey, String(Math.floor(storedEnd))); } catch(e){}
   } else {
-    // if server reports less remaining than stored, prefer smaller (server authoritative)
-    // but only for resume scenarios, not fresh starts
     if (serverRemaining > 0) {
       const serverEnd = now + (serverRemaining * 1000);
       if (serverEnd < storedEnd) {
@@ -1098,11 +1352,14 @@ function startTimer(forceFresh = false) {
         localStorage.removeItem(endKey);
         localStorage.removeItem(attemptKey);
       } catch(e){}
-      setTimeout(function(){ alert('Time is up! Auto-submitting exam...'); autoSubmitExam(); }, 120);
+      setTimeout(function(){ 
+        alert('Time is up! Auto-submitting exam...'); 
+        autoSubmitExam(); 
+      }, 120);
     }
   }, 1000);
 
-  // keep tabs in sync
+  // Keep tabs in sync
   window.addEventListener('storage', function(e){
     if (e.key === endKey) {
       const v = e.newValue;
@@ -1145,8 +1402,6 @@ function updateTimer() {
   }
 }
 
-
-
 function autoSubmitExam() {
   const form = document.querySelector('form');
   if (form) {
@@ -1161,25 +1416,33 @@ function autoSubmitExam() {
   }
 }
 
-function confirmSubmit() { return confirm('Are you sure you want to submit the exam? This action cannot be undone.'); }
+function confirmSubmit() { 
+  return confirm('Are you sure you want to submit the exam? This action cannot be undone.'); 
+}
 
 document.addEventListener('DOMContentLoaded', function() {
   startTimer({{ 'true' if is_fresh_start else 'false' }});
   updateMetricsCounts();
   updateOptionVisuals();
+  
   if (document.getElementById('numericDisplay')) {
     updateDisplay();
     document.addEventListener('keydown', function(e){
-      if (document.getElementById('numericDisplay') && !['Tab','Enter','Escape'].includes(e.key) && !e.ctrlKey && !e.altKey) e.preventDefault();
+      if (document.getElementById('numericDisplay') && !['Tab','Enter','Escape'].includes(e.key) && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+      }
     });
   }
+  
   document.getElementById('clearSelectionBtn')?.addEventListener('click', clearSelection);
+  
   document.querySelectorAll('input[name="answer"], input[name="numeric_answer"]').forEach(function(input){
     input.addEventListener('change', function(){
       updatePaletteStatus({{ current_index }}, 'answered');
       updateOptionVisuals();
     });
   });
+  
   document.querySelectorAll('.exam-navigation-btn').forEach(function(btn){
     btn.addEventListener('click', function(e){
       const action = this.getAttribute('name') === 'action' ? this.value : this.querySelector('input[name="action"]')?.value;
@@ -1189,33 +1452,51 @@ document.addEventListener('DOMContentLoaded', function() {
       else if (action !== 'prev' && action !== 'submit') updatePaletteStatus({{ current_index }}, 'visited');
     });
   });
+  
   let isNavigating = false;
-  document.querySelectorAll('.exam-navigation-btn, .palette-link').forEach(function(element){ element.addEventListener('click', function(){ isNavigating = true; }); });
-  window.addEventListener('beforeunload', function(e){ if (!isNavigating) { e.preventDefault(); e.returnValue = 'Are you sure you want to leave? Your progress may be lost.'; } });
+  document.querySelectorAll('.exam-navigation-btn, .palette-link').forEach(function(element){ 
+    element.addEventListener('click', function(){ isNavigating = true; }); 
+  });
+  
+  window.addEventListener('beforeunload', function(e){ 
+    if (!isNavigating) { 
+      e.preventDefault(); 
+      e.returnValue = 'Are you sure you want to leave? Your progress may be lost.'; 
+    } 
+  });
+  
   {% if question.has_image and question.image_url %}
   const questionImage = document.getElementById('questionImage{{ current_index }}');
   if (questionImage) {
-    if (questionImage.complete && questionImage.naturalHeight !== 0) handleImageLoad({{ current_index }});
-    else if (questionImage.complete && questionImage.naturalHeight === 0) handleImageError({{ current_index }});
+    if (questionImage.complete && questionImage.naturalHeight !== 0) {
+      handleImageLoad({{ current_index }});
+    } else if (questionImage.complete && questionImage.naturalHeight === 0) {
+      handleImageError({{ current_index }});
+    }
+    
     setTimeout(()=> {
       const containerEl = document.getElementById('imageContainer{{ current_index }}');
       const loadingEl = document.getElementById('imageLoading{{ current_index }}');
-      if (loadingEl && loadingEl.style.display !== 'none' && containerEl && containerEl.style.display === 'none') handleImageError({{ current_index }});
+      if (loadingEl && loadingEl.style.display !== 'none' && containerEl && containerEl.style.display === 'none') {
+        handleImageError({{ current_index }});
+      }
     }, 15000);
   }
   {% endif %}
 });
 
-window.addEventListener('unload', function(){ if (timerInterval) clearInterval(timerInterval); });
+window.addEventListener('unload', function(){ 
+  if (timerInterval) clearInterval(timerInterval); 
+});
 
 {% if current_index + 1 < total_questions %}
 {% set next_question = questions[current_index + 1] %}
 {% if next_question.has_image and next_question.image_url %}
-setTimeout(()=>{ const preloadImg = new Image(); preloadImg.src = '{{ next_question.image_url }}'; }, 2000);
+setTimeout(()=>{ 
+  const preloadImg = new Image(); 
+  preloadImg.src = '{{ next_question.image_url }}'; 
+}, 2000);
 {% endif %}
 {% endif %}
-
-
-
 </script>
 {% endblock %}
