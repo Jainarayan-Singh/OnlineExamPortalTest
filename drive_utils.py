@@ -11,7 +11,9 @@ CSV_ENV_MAP = {
     'responses': 'RESPONSES_FILE_ID',
     'exam_attempts': 'EXAM_ATTEMPTS_FILE_ID',
     'requests_raised': 'REQUESTS_RAISED_FILE_ID',
-    'sessions': 'SESSIONS_FILE_ID'
+    'sessions': 'SESSIONS_FILE_ID',
+    'login_attempts': 'LOGIN_ATTEMPTS_FILE_ID',
+    'pw_tokens': 'PW_TOKENS_FILE_ID' 
 }
 
 _lock = RLock()

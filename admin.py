@@ -21,7 +21,7 @@ from sessions import require_valid_session, generate_session_token, save_session
 from datetime import datetime
 from flask import abort, send_file
 import io
-
+import re
 
 
 from google_drive_service import (
@@ -128,65 +128,108 @@ def sanitize_html(s):
 
 @admin_bp.route("/login", methods=["GET", "POST"])
 def admin_login():
+    from main import load_csv_with_cache, is_password_hashed, hash_password, verify_password, get_file_lock
     if request.method == "POST":
-        identifier = request.form.get("username", "").strip().lower()
-        password = request.form.get("password", "").strip()
-        from main import load_csv_with_cache
-        users_df = load_csv_with_cache("users.csv")
-        if users_df.empty:
-            flash("No users available!", "error")
-            return redirect(url_for("admin.admin_login"))
-
-        users_df["username_lower"] = users_df["username"].astype(str).str.strip().str.lower()
-        users_df["email_lower"] = users_df["email"].astype(str).str.strip().str.lower()
-        users_df["role_lower"] = users_df["role"].astype(str).str.strip().str.lower()
-
-        user_row = users_df[
-            (users_df["username_lower"] == identifier) |
-            (users_df["email_lower"] == identifier)
-        ]
-        if user_row.empty:
-            flash("Invalid username/email or password!", "error")
-            return redirect(url_for("admin.admin_login"))
-
-        user = user_row.iloc[0]
-        if str(user.get("password", "")) != password:
-            flash("Invalid username/email or password!", "error")
-            return redirect(url_for("admin.admin_login"))
-
-        role = str(user.get("role", "")).lower()
-        if "admin" not in role:
-            flash("You do not have admin access.", "error")
-            return redirect(url_for("admin.admin_login"))
-
-        # enforce single active session for this user (invalidate previous tokens)
         try:
-            invalidate_session(int(user["id"]))
+            identifier = request.form.get("username", "").strip().lower()
+            password = request.form.get("password", "").strip()
+
+            if not identifier or not password:
+                flash("Both username/email and password are required!", "error")
+                return redirect(url_for("admin.admin_login"))
+
+            users_df = load_csv_with_cache("users.csv")
+            if users_df is None or users_df.empty:
+                flash("No users available!", "error")
+                return redirect(url_for("admin.admin_login"))
+
+            users_df["username_lower"] = users_df["username"].astype(str).str.strip().str.lower()
+            users_df["email_lower"] = users_df["email"].astype(str).str.strip().str.lower()
+            users_df["role_lower"] = users_df["role"].astype(str).str.strip().str.lower()
+
+            user_row = users_df[
+                (users_df["username_lower"] == identifier) |
+                (users_df["email_lower"] == identifier)
+            ]
+            if user_row.empty:
+                flash("Invalid username/email or password!", "error")
+                return redirect(url_for("admin.admin_login"))
+
+            user = user_row.iloc[0]
+            stored_password = str(user.get("password", ""))
+
+            if not stored_password:
+                flash("Your account has no password set. Contact system administrator.", "error")
+                return redirect(url_for("admin.admin_login"))
+
+            password_valid = False
+            if is_password_hashed(stored_password):
+                password_valid = verify_password(password, stored_password)
+            else:
+                password_valid = (stored_password == password)
+                if password_valid:
+                    try:
+                        with get_file_lock('users'):
+                            users_df = load_csv_with_cache("users.csv")
+                            user_row = users_df[
+                                (users_df["username"].str.lower() == identifier) |
+                                (users_df["email"].str.lower() == identifier)
+                            ]
+                            current_password = str(user_row.iloc[0]["password"])
+                            if not is_password_hashed(current_password):
+                                hashed_password = hash_password(password)
+                                users_df.loc[user_row.index[0], "password"] = hashed_password
+                                users_df.loc[user_row.index[0], "updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                safe_csv_save_with_retry(users_df, "users")
+                    except Exception as e:
+                        print(f"[admin_login] Error auto-migrating password: {e}")
+
+            if not password_valid:
+                flash("Invalid username/email or password!", "error")
+                return redirect(url_for("admin.admin_login"))
+
+            role = str(user.get("role", "")).lower().strip()
+            roles_set = set(t.strip() for t in re.split(r"[,\;/\|\s]+", role) if t.strip())
+            if "admin" not in roles_set:
+                flash("You do not have admin access.", "error")
+                return redirect(url_for("admin.admin_login"))
+
+            try:
+                invalidate_session(int(user["id"]))
+            except Exception as e:
+                print(f"[admin_login] invalidate_session error: {e}")
+
+            token = generate_session_token()
+            save_session_record({
+                "user_id": int(user["id"]),
+                "token": token,
+                "device_info": request.headers.get("User-Agent", "unknown"),
+                "is_exam_active": False
+            })
+
+            session.clear()
+            session["admin_id"] = int(user["id"])
+            session["admin_name"] = user.get("username")
+            session["user_id"] = int(user["id"])
+            session["username"] = user.get("username")
+            session["full_name"] = user.get("full_name", user.get("username"))
+            session["token"] = token
+            session.permanent = True
+
+            try:
+                users_df.loc[user_row.index[0], "updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                users_df.loc[user_row.index[0], "last_login"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                safe_csv_save_with_retry(users_df, "users")
+            except Exception as e:
+                print(f"[admin_login] Error updating last login: {e}")
+
+            flash("Admin login successful!", "success")
+            return redirect(url_for("admin.dashboard"))
+
         except Exception as e:
-            print("[admin_login] invalidate_session error:", e)
-
-        # create new token and save server-side record
-        # create new token and save locally (fast)
-        token = generate_session_token()
-        save_session_record({
-            "user_id": int(user["id"]),
-            "token": token,
-            "device_info": request.headers.get("User-Agent", "unknown"),
-            "is_exam_active": False
-        })
-
-        # set flask session for admin
-        session["admin_id"] = int(user["id"])
-        session["admin_name"] = user.get("username")
-        session["user_id"] = int(user["id"])
-        session["username"] = user.get("username")
-        session["full_name"] = user.get("full_name", user.get("username"))
-        session["token"] = token
-        session.permanent = True
-        print("[admin_login] flask session snapshot:", {k: session.get(k) for k in ['user_id','token','admin_id','admin_name']})
-
-        flash("Admin login successful!", "success")
-        return redirect(url_for("admin.dashboard"))
+            print(f"[admin_login] Unexpected error: {e}")
+            flash("A system error occurred. Please try again.", "error")
+            return redirect(url_for("admin.admin_login"))
 
     return render_template("admin/admin_login.html")
 

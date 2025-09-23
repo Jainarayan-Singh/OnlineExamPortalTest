@@ -1,63 +1,50 @@
-# main.py - FIXED VERSION with explicit Google Drive initialization
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import pandas as pd
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import wraps
 import json
 import time
 import secrets
 import string
-import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import secrets
 import re
-from fpdf import FPDF
-from PIL import Image
-import requests
-from io import BytesIO
 import tempfile
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
 from dotenv import load_dotenv
 from admin import admin_bp
 import threading
 import uuid
 from flask_session import Session
 import tempfile
-from sessions import (
-    generate_session_token, save_session_record, 
-    invalidate_session, update_last_seen, set_exam_active, 
-    require_valid_session, require_user_role, require_admin_role
-)
-from email_utils import send_credentials_email
+from sessions import generate_session_token, save_session_record, invalidate_session, set_exam_active, require_user_role, require_admin_role
+from email_utils import send_password_setup_email, send_password_reset_email
 import threading
 cache_lock = threading.RLock()
 import gc
 gc.set_threshold(700, 10, 10) 
 from flask import Response
-from reportlab.lib.utils import simpleSplit 
 import math
-
+import bcrypt
+import secrets
+from datetime import datetime, timedelta
+import re
+from google_drive_service import create_drive_service, load_csv_from_drive, save_csv_to_drive, find_file_by_name, get_public_url
 
 # CRITICAL: Load environment variables FIRST
 load_dotenv()
 
 # CRITICAL: Check if running on Render or local
-IS_PRODUCTION = os.environ.get('RENDER') is not None  # Render sets this automatically
+IS_PRODUCTION = os.environ.get('RENDER') is not None  
 if IS_PRODUCTION:
     print("🌐 Running on Render (Production)")
 else:
     print("💻 Running locally")
 
 # Import Google Drive service
-from google_drive_service import (
-    create_drive_service, load_csv_from_drive, save_csv_to_drive,
-    find_file_by_name, get_public_url, find_folder_by_name,
-    list_drive_files, create_file_if_not_exists
-)
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
@@ -90,7 +77,7 @@ from latex_editor import latex_bp
 app.register_blueprint(latex_bp) 
 
 # Use filesystem for Render single-instance free tier. For multi-instance use Redis.
-SESSION_TYPE = os.environ.get("SESSION_TYPE", "filesystem")  # default to filesystem
+SESSION_TYPE = os.environ.get("SESSION_TYPE", "filesystem")  
 # session files dir
 SESSION_FILE_DIR = os.environ.get("SESSION_FILE_DIR",
                                   os.path.join(tempfile.gettempdir(), "flask_session"))
@@ -151,6 +138,8 @@ RESULTS_FILE_ID = os.environ.get('RESULTS_FILE_ID')
 RESPONSES_FILE_ID = os.environ.get('RESPONSES_FILE_ID')
 EXAM_ATTEMPTS_FILE_ID = os.environ.get('EXAM_ATTEMPTS_FILE_ID')
 REQUESTS_RAISED_FILE_ID = os.environ.get("REQUESTS_RAISED_FILE_ID")
+LOGIN_ATTEMPTS_FILE_ID = os.environ.get('LOGIN_ATTEMPTS_FILE_ID')
+PW_TOKENS_FILE_ID = os.environ.get('PW_TOKENS_FILE_ID')
 
 DRIVE_FILE_IDS = {
     'users': USERS_FILE_ID,
@@ -159,7 +148,9 @@ DRIVE_FILE_IDS = {
     'results': RESULTS_FILE_ID,
     'responses': RESPONSES_FILE_ID,
     'exam_attempts': EXAM_ATTEMPTS_FILE_ID,
-    'requests_raised': REQUESTS_RAISED_FILE_ID
+    'requests_raised': REQUESTS_RAISED_FILE_ID,
+    'login_attempts': LOGIN_ATTEMPTS_FILE_ID,
+    'pw_tokens': PW_TOKENS_FILE_ID  
 }
 
 # Google Drive Folder IDs
@@ -1280,6 +1271,8 @@ print("🔧 Module loading - checking execution context...")
 print(f"📍 __name__ = {__name__}")
 print(f"🌐 RENDER environment: {os.environ.get('RENDER', 'Not set')}")
 
+# MINIMAL FIX: Replace only the validation section in force_drive_initialization()
+
 def force_drive_initialization():
     """Force Google Drive initialization for all execution contexts"""
     global drive_service
@@ -1291,14 +1284,33 @@ def force_drive_initialization():
     if json_env:
         print(f"✅ GOOGLE_SERVICE_ACCOUNT_JSON found: {len(json_env)} characters")
         
-        # Test JSON parsing
-        try:
-            test_json = json.loads(json_env)
-            print(f"✅ JSON is valid. Client email: {test_json.get('client_email', 'Not found')}")
-        except json.JSONDecodeError as e:
-            print(f"❌ JSON parsing failed: {e}")
-            print(f"📄 First 100 chars: {json_env[:100]}")
-            return False
+        # UPDATED VALIDATION: Handle both JSON content and file paths
+        if json_env.strip().startswith('{'):
+            # It's JSON content - validate it
+            try:
+                test_json = json.loads(json_env)
+                print(f"✅ JSON content is valid. Client email: {test_json.get('client_email', 'Not found')}")
+            except json.JSONDecodeError as e:
+                print(f"❌ JSON parsing failed: {e}")
+                print(f"📄 First 100 chars: {json_env[:100]}")
+                return False
+        else:
+            # It's a file path - validate file exists and is valid JSON
+            print(f"📁 File path detected: {json_env}")
+            if os.path.exists(json_env):
+                try:
+                    with open(json_env, 'r', encoding='utf-8') as f:
+                        test_json = json.load(f)
+                    print(f"✅ JSON file is valid. Client email: {test_json.get('client_email', 'Not found')}")
+                except json.JSONDecodeError as e:
+                    print(f"❌ JSON file parsing failed: {e}")
+                    return False
+                except Exception as e:
+                    print(f"❌ Error reading JSON file: {e}")
+                    return False
+            else:
+                print(f"❌ JSON file not found: {json_env}")
+                return False
     else:
         print("❌ GOOGLE_SERVICE_ACCOUNT_JSON not found in environment")
         print("📋 Available environment variables with 'GOOGLE' or 'SERVICE':")
@@ -1307,7 +1319,7 @@ def force_drive_initialization():
                 print(f"   - {key}")
         return False
     
-    # Initialize the service
+    # Initialize the service (UNCHANGED)
     try:
         success = init_drive_service()
         if success:
@@ -1321,15 +1333,6 @@ def force_drive_initialization():
         import traceback
         traceback.print_exc()
         return False
-
-# CALL IT IMMEDIATELY when module loads
-print("🔄 Attempting force initialization...")
-initialization_success = force_drive_initialization()
-
-if initialization_success:
-    print("🎉 Google Drive service ready!")
-else:
-    print("⚠️ Google Drive service failed to initialize")
 
 
 
@@ -1820,6 +1823,273 @@ def force_drive_initialization():
         return False
 
 
+
+# =============================================
+# SECURITY FUNCTIONS - ADD TO main.py
+# =============================================
+
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt with cost factor 12."""
+    if not password:
+        raise ValueError("Password cannot be empty")
+    
+    password_bytes = password.encode('utf-8')
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=12))
+    return hashed.decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verify a password against its bcrypt hash."""
+    if not password or not hashed:
+        return False
+    
+    try:
+        password_bytes = password.encode('utf-8')
+        hashed_bytes = hashed.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    except Exception as e:
+        print(f"Password verification error: {e}")
+        return False
+
+def is_password_hashed(password: str) -> bool:
+    """Check if a password is already bcrypt hashed."""
+    if not password:
+        return False
+    return (password.startswith(('$2a$', '$2b$', '$2y$')) and len(password) == 60)
+
+def validate_password_strength(password: str) -> tuple:
+    """Validate password strength according to security requirements."""
+    if len(password) < 10:
+        return False, "Password must be at least 10 characters long"
+    
+    if len(password) > 128:
+        return False, "Password must be less than 128 characters"
+    
+    # Check for required character types
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    if not re.search(r'[0-9]', password):
+        return False, "Password must contain at least one digit"
+    
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "Password must contain at least one special character"
+    
+    # Check for common weak passwords
+    weak_passwords = ['password123', '123456789', 'qwerty123', 'admin123', 'welcome123']
+    if password.lower() in weak_passwords:
+        return False, "This password is too common. Please choose a stronger password"
+    
+    return True, "Password is strong"
+
+def create_password_token(email: str, token_type: str) -> str:
+    """Create a secure token for password operations."""
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now() + timedelta(hours=1)
+    
+    # Load existing tokens
+    tokens_df = load_csv_with_cache('pw_tokens.csv')
+    if tokens_df is None or tokens_df.empty:
+        tokens_df = pd.DataFrame(columns=['token', 'email', 'expires_at', 'used', 'created_at', 'type'])
+    
+    # Add new token
+    new_token = {
+        'token': token,
+        'email': email.lower(),
+        'expires_at': expires_at.strftime('%Y-%m-%d %H:%M:%S'),
+        'used': False,
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'type': token_type
+    }
+    
+    tokens_df = pd.concat([tokens_df, pd.DataFrame([new_token])], ignore_index=True)
+    
+    if safe_csv_save_with_retry(tokens_df, 'pw_tokens'):
+        return token
+    else:
+        raise Exception("Failed to save token")
+
+def validate_and_use_token(token: str) -> tuple:
+    """Validate a token and mark it as used."""
+    try:
+        tokens_df = load_csv_with_cache('pw_tokens.csv')
+        if tokens_df is None or tokens_df.empty:
+            return False, "Invalid token", {}
+        
+        # Find token
+        token_row = tokens_df[tokens_df['token'] == token]
+        if token_row.empty:
+            return False, "Invalid token", {}
+        
+        token_data = token_row.iloc[0].to_dict()
+        
+        # Check if already used
+        if token_data['used']:
+            return False, "Token has already been used", {}
+        
+        # Check expiration
+        expires_at = pd.to_datetime(token_data['expires_at'])
+        if datetime.now() > expires_at:
+            return False, "Token has expired", {}
+        
+        # Mark as used
+        tokens_df.loc[tokens_df['token'] == token, 'used'] = True
+        safe_csv_save_with_retry(tokens_df, 'pw_tokens')
+        
+        return True, "Token valid", token_data
+        
+    except Exception as e:
+        print(f"Error validating token: {e}")
+        return False, "Token validation error", {}
+
+def check_login_attempts(email: str, ip: str) -> tuple:
+    """Check if login attempts are within allowed limits."""
+    try:
+        attempts_df = load_csv_with_cache('login_attempts.csv')
+        if attempts_df is None or attempts_df.empty:
+            return True, "", 5  # No previous attempts
+        
+        # Find existing record
+        record = attempts_df[
+            (attempts_df['email'].str.lower() == email.lower()) & 
+            (attempts_df['ip'] == ip)
+        ]
+        
+        if record.empty:
+            return True, "", 5  # No previous attempts
+        
+        record_data = record.iloc[0]
+        
+        # Check if currently blocked
+        if pd.notna(record_data['blocked_until']):
+            blocked_until = pd.to_datetime(record_data['blocked_until'])
+            if datetime.now() < blocked_until:
+                minutes_left = int((blocked_until - datetime.now()).total_seconds() / 60) + 1
+                return False, f"Too many failed attempts. Try again in {minutes_left} minutes.", 0
+        
+        # Check if within attempt window (15 minutes)
+        first_failed = pd.to_datetime(record_data['first_failed_at'])
+        if datetime.now() - first_failed > timedelta(minutes=15):
+            # Reset attempts if outside window
+            clear_login_attempts(email, ip)
+            return True, "", 5
+        
+        failed_count = int(record_data['failed_count'])
+        remaining = max(0, 5 - failed_count)
+        
+        if remaining <= 0:
+            return False, "Too many failed attempts. Account temporarily locked.", 0
+        
+        return True, "", remaining
+        
+    except Exception as e:
+        print(f"Error checking login attempts: {e}")
+        return True, "", 5
+
+def record_failed_login(email: str, ip: str) -> bool:
+    """Record a failed login attempt."""
+    try:
+        attempts_df = load_csv_with_cache('login_attempts.csv')
+        if attempts_df is None or attempts_df.empty:
+            attempts_df = pd.DataFrame(columns=['email', 'ip', 'failed_count', 'first_failed_at', 'last_failed_at', 'blocked_until'])
+        
+        # Find existing record
+        mask = (attempts_df['email'].str.lower() == email.lower()) & (attempts_df['ip'] == ip)
+        existing_record = attempts_df[mask]
+        
+        now = datetime.now()
+        
+        if existing_record.empty:
+            # Create new record
+            new_record = {
+                'email': email.lower(),
+                'ip': ip,
+                'failed_count': 1,
+                'first_failed_at': now.strftime('%Y-%m-%d %H:%M:%S'),
+                'last_failed_at': now.strftime('%Y-%m-%d %H:%M:%S'),
+                'blocked_until': ''
+            }
+            attempts_df = pd.concat([attempts_df, pd.DataFrame([new_record])], ignore_index=True)
+        else:
+            # Update existing record
+            index = existing_record.index[0]
+            failed_count = int(existing_record.iloc[0]['failed_count']) + 1
+            
+            attempts_df.at[index, 'failed_count'] = failed_count
+            attempts_df.at[index, 'last_failed_at'] = now.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Block if 5 attempts reached
+            if failed_count >= 5:
+                blocked_until = now + timedelta(minutes=15)
+                attempts_df.at[index, 'blocked_until'] = blocked_until.strftime('%Y-%m-%d %H:%M:%S')
+        
+        return safe_csv_save_with_retry(attempts_df, 'login_attempts')
+        
+    except Exception as e:
+        print(f"Error recording failed login: {e}")
+        return False
+
+def clear_login_attempts(email: str, ip: str) -> bool:
+    """Clear login attempts for successful login."""
+    try:
+        attempts_df = load_csv_with_cache('login_attempts.csv')
+        if attempts_df is None or attempts_df.empty:
+            return True
+        
+        # Remove record for this email/ip combination
+        mask = (attempts_df['email'].str.lower() == email.lower()) & (attempts_df['ip'] == ip)
+        attempts_df = attempts_df[~mask]
+        
+        return safe_csv_save_with_retry(attempts_df, 'login_attempts')
+        
+    except Exception as e:
+        print(f"Error clearing login attempts: {e}")
+        return False
+
+def get_client_ip():
+    """Get client IP address for rate limiting."""
+    return request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+
+def migrate_plaintext_passwords():
+    """One-time migration to convert existing plaintext passwords to bcrypt."""
+    try:
+        users_df = load_csv_with_cache('users.csv')
+        if users_df is None or users_df.empty:
+            return False, "No users found"
+        
+        migrated_count = 0
+        
+        for index, user in users_df.iterrows():
+            current_password = str(user.get('password', ''))
+            
+            # Skip if already hashed or empty
+            if not current_password or is_password_hashed(current_password):
+                continue
+            
+            try:
+                hashed_password = hash_password(current_password)
+                users_df.at[index, 'password'] = hashed_password
+                users_df.at[index, 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                migrated_count += 1
+                print(f"Migrated password for user: {user.get('username', 'Unknown')}")
+            except Exception as e:
+                print(f"Error migrating password for user {user.get('username', 'Unknown')}: {e}")
+        
+        if migrated_count > 0:
+            if safe_csv_save_with_retry(users_df, 'users'):
+                return True, f"Successfully migrated {migrated_count} passwords to bcrypt hashes"
+            else:
+                return False, "Failed to save migrated passwords"
+        else:
+            return True, "No passwords needed migration"
+            
+    except Exception as e:
+        print(f"Error during password migration: {e}")
+        return False, f"Migration failed: {str(e)}"
+
+
 # -------------------------
 # Routes - Add explicit initialization before first route
 # -------------------------
@@ -1951,12 +2221,18 @@ def login():
     
     if request.method == "POST":
         try:
-            # FIXED: Use 'username' field name that matches your form
-            identifier = request.form["username"].strip().lower()  # Changed from 'identifier' to 'username'
+            identifier = request.form["username"].strip().lower()
             password = request.form["password"].strip()
+            client_ip = get_client_ip()
 
             if not identifier or not password:
                 flash("Both username/email and password are required!", "error")
+                return redirect(url_for("login"))
+
+            # Check login attempt rate limiting
+            is_allowed, limit_message, attempts_remaining = check_login_attempts(identifier, client_ip)
+            if not is_allowed:
+                flash(limit_message, "error")
                 return redirect(url_for("login"))
 
             # Load users data
@@ -1978,19 +2254,69 @@ def login():
             ]
 
             if user_row.empty:
-                flash("Invalid username/email or password!", "error")
+                # Record failed attempt for non-existent user
+                record_failed_login(identifier, client_ip)
+                if attempts_remaining <= 1:
+                    flash("Invalid username/email or password! Account will be temporarily locked after one more failed attempt.", "error")
+                else:
+                    flash(f"Invalid username/email or password! {attempts_remaining - 1} attempts remaining.", "error")
                 return redirect(url_for("login"))
 
             user = user_row.iloc[0]
+            stored_password = str(user["password"])
 
-            # Verify password
-            if str(user["password"]) != password:
-                flash("Invalid username/email or password!", "error")
+            # Check if password is empty (needs setup)
+            if not stored_password:
+                flash("Your account needs to be set up. Please check your email for setup instructions or contact admin.", "warning")
                 return redirect(url_for("login"))
+
+            # Verify password (bcrypt or fallback to plaintext for migration)
+            password_valid = False
+            if is_password_hashed(stored_password):
+                # Use bcrypt verification
+                password_valid = verify_password(password, stored_password)
+            else:
+                # Fallback for plaintext passwords during migration
+                password_valid = (stored_password == password)
+                
+                # If plaintext password is correct, hash it immediately
+                if password_valid:
+                    try:
+                        # ADD FILE LOCKING HERE to prevent race condition
+                        with get_file_lock('users'):
+                            # Reload users_df to get latest data
+                            users_df = load_csv_with_cache('users.csv')
+                            user_row = users_df[
+                                (users_df['username'].str.lower() == identifier) |
+                                (users_df['email'].str.lower() == identifier)
+                            ]
+                            
+                            # Check if password is still plaintext (another thread might have migrated it)
+                            current_password = str(user_row.iloc[0]["password"])
+                            if not is_password_hashed(current_password):
+                                hashed_password = hash_password(password)
+                                users_df.loc[user_row.index[0], 'password'] = hashed_password
+                                users_df.loc[user_row.index[0], 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                safe_csv_save_with_retry(users_df, 'users')
+                                print(f"Auto-migrated password for user: {user['username']}")
+                    except Exception as e:
+                        print(f"Error auto-migrating password: {e}")
+
+            if not password_valid:
+                # Record failed attempt
+                record_failed_login(identifier, client_ip)
+                if attempts_remaining <= 1:
+                    flash("Invalid password! Account will be temporarily locked after one more failed attempt.", "error")
+                else:
+                    flash(f"Invalid username/email or password! {attempts_remaining - 1} attempts remaining.", "error")
+                return redirect(url_for("login"))
+
+            # Clear failed attempts on successful login
+            clear_login_attempts(identifier, client_ip)
 
             role = str(user.get("role", "")).lower()
 
-            # ENHANCED: Validate role access for user portal
+            # Validate role access for user portal
             if "user" not in role:
                 flash("You don't have User portal access. Contact admin if you need access.", "error")
                 return redirect(url_for("login"))
@@ -2002,7 +2328,6 @@ def login():
                 print(f"[login] Error invalidating session: {e}")
 
             # Create and save new session token
-            # Create and save new session token (local)
             token = generate_session_token()
             save_session_record({
                 "user_id": int(user["id"]),
@@ -2011,14 +2336,21 @@ def login():
                 "is_exam_active": False
             })
 
-            # ENHANCED: Only set user session data, NO admin session data
-            session.clear()  # Clear any existing session data
+            # Set user session data
+            session.clear()
             session['user_id'] = int(user["id"])
             session['token'] = token
             session['username'] = user.get("username")
             session['full_name'] = user.get("full_name", user.get("username"))
-         
             session.permanent = True
+
+            # Update last login time
+            try:
+                users_df.loc[user_row.index[0], 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                users_df.loc[user_row.index[0], 'last_login'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                safe_csv_save_with_retry(users_df, 'users')
+            except Exception as e:
+                print(f"Error updating last login: {e}")
 
             flash("Login successful!", "success")
             return redirect(url_for("dashboard"))
@@ -2038,10 +2370,6 @@ def login():
 
 
 
-@app.route('/reset-password')
-def reset_password_page():
-    """Password reset page route"""
-    return render_template('password_reset.html')
 
 
 @app.route('/api/verify-user', methods=['POST'])
@@ -2103,253 +2431,29 @@ def api_verify_user():
         }), 500
 
 
-@app.route('/api/reset-password', methods=['POST'])
-def api_reset_password():
-    """FIXED API endpoint to reset user password with immediate cache refresh"""
-    operation_id = generate_operation_id()
-    print(f"[{operation_id}] Starting password reset request")
-    
-    try:
-        data = request.get_json()
-        
-        # Validate required fields
-        required_fields = ['username', 'old_password', 'new_password', 'confirm_password']
-        for field in required_fields:
-            if not data or not data.get(field):
-                return jsonify({
-                    'success': False,
-                    'message': f'{field.replace("_", " ").title()} is required',
-                    'field_errors': {field: f'{field.replace("_", " ").title()} is required'}
-                }), 400
-        
-        username = data['username'].strip()
-        old_password = data['old_password'].strip()
-        new_password = data['new_password'].strip()
-        confirm_password = data['confirm_password'].strip()
-        
-        print(f"[{operation_id}] Password reset for user: {username}")
-        
-        # Validation checks
-        field_errors = {}
-        
-        # Check password length
-        if len(new_password) < 6:
-            field_errors['newPassword'] = 'New password must be at least 6 characters long'
-        
-        # Check password match
-        if new_password != confirm_password:
-            field_errors['confirmPassword'] = 'New password and confirm password do not match'
-        
-        # Check if new password is same as old
-        if new_password == old_password:
-            field_errors['newPassword'] = 'New password must be different from current password'
-        
-        if field_errors:
-            print(f"[{operation_id}] Validation failed: {field_errors}")
-            return jsonify({
-                'success': False,
-                'message': 'Validation failed',
-                'field_errors': field_errors
-            }), 400
-        
-        # CRITICAL: Use proper file locking and force cache refresh
-        file_lock = get_file_lock('users')
-        with file_lock:
-            print(f"[{operation_id}] Acquired file lock for users.csv")
-            
-            # Force clear all caches first
-            clear_user_cache()
-            
-            # Load fresh users data directly from Drive
-            users_df = None
-            try:
-                # Try direct Drive load first
-                if drive_service and DRIVE_FILE_IDS.get('users'):
-                    print(f"[{operation_id}] Loading users.csv directly from Google Drive")
-                    users_df = safe_drive_csv_load(
-                        drive_service, 
-                        DRIVE_FILE_IDS['users'], 
-                        friendly_name='users.csv'
-                    )
-                
-                if users_df is None or users_df.empty:
-                    print(f"[{operation_id}] Drive load failed, trying cache reload")
-                    users_df = load_csv_with_cache('users.csv', force_reload=True)
-                
-                if users_df is None or users_df.empty:
-                    print(f"[{operation_id}] All load methods failed")
-                    return jsonify({
-                        'success': False,
-                        'message': 'User database is unavailable',
-                        'field_errors': {'oldPassword': 'Database access error'}
-                    }), 500
-                    
-            except Exception as e:
-                print(f"[{operation_id}] Error loading users data: {e}")
-                return jsonify({
-                    'success': False,
-                    'message': 'Failed to load user database',
-                    'field_errors': {'oldPassword': 'Database load error'}
-                }), 500
-            
-            print(f"[{operation_id}] Loaded {len(users_df)} users from database")
-            
-            # Find user with case-insensitive search
-            try:
-                users_df['username_lower'] = users_df['username'].astype(str).str.strip().str.lower()
-                user_mask = users_df['username_lower'] == username.lower()
-                
-                if not user_mask.any():
-                    print(f"[{operation_id}] User not found: {username}")
-                    return jsonify({
-                        'success': False,
-                        'message': 'User not found',
-                        'field_errors': {'oldPassword': 'User not found'}
-                    }), 404
-                
-                user_row = users_df[user_mask].iloc[0]
-                user_index = users_df[user_mask].index[0]
-                
-                print(f"[{operation_id}] Found user at index {user_index}: {user_row['username']}")
-                
-            except Exception as e:
-                print(f"[{operation_id}] Error finding user: {e}")
-                return jsonify({
-                    'success': False,
-                    'message': 'Error locating user',
-                    'field_errors': {'oldPassword': 'User lookup error'}
-                }), 500
-            
-            # Verify old password
-            current_password = str(user_row['password']).strip()
-            if current_password != old_password:
-                print(f"[{operation_id}] Password verification failed for user {username}")
-                return jsonify({
-                    'success': False,
-                    'message': 'Incorrect current password',
-                    'field_errors': {'oldPassword': 'Incorrect current password'}
-                }), 400
-            
-            # Update password in DataFrame
-            try:
-                users_df.at[user_index, 'password'] = new_password
-                users_df.at[user_index, 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
-                print(f"[{operation_id}] Updated password for user {username}")
-                
-            except Exception as e:
-                print(f"[{operation_id}] Error updating DataFrame: {e}")
-                return jsonify({
-                    'success': False,
-                    'message': 'Error updating user data',
-                    'field_errors': {'oldPassword': 'Data update error'}
-                }), 500
-            
-            # Save to Google Drive with multiple retry attempts
-            save_success = False
-            save_error = None
-            
-            for attempt in range(5):  # 5 retry attempts
-                try:
-                    print(f"[{operation_id}] Save attempt {attempt + 1}")
-                    
-                    if drive_service and DRIVE_FILE_IDS.get('users'):
-                        success = save_csv_to_drive(drive_service, users_df, DRIVE_FILE_IDS['users'])
-                        if success:
-                            save_success = True
-                            print(f"[{operation_id}] Successfully saved to Google Drive on attempt {attempt + 1}")
-                            break
-                        else:
-                            print(f"[{operation_id}] Drive save returned False on attempt {attempt + 1}")
-                    else:
-                        print(f"[{operation_id}] No drive service or file ID available")
-                        
-                except Exception as e:
-                    save_error = str(e)
-                    print(f"[{operation_id}] Save attempt {attempt + 1} failed: {e}")
-                    time.sleep(0.5 * (attempt + 1))  # Progressive delay
-                    continue
-            
-            # Fallback to local save if Drive fails
-            if not save_success:
-                try:
-                    local_path = os.path.join(os.getcwd(), 'users.csv')
-                    users_df.to_csv(local_path, index=False)
-                    save_success = True
-                    print(f"[{operation_id}] Saved to local file as fallback")
-                except Exception as e:
-                    save_error = str(e)
-                    print(f"[{operation_id}] Local save also failed: {e}")
-            
-            if not save_success:
-                print(f"[{operation_id}] All save attempts failed: {save_error}")
-                return jsonify({
-                    'success': False,
-                    'message': 'Failed to save password update. Please try again.',
-                    'field_errors': {'oldPassword': f'Save failed: {save_error}'}
-                }), 500
-            
-            # CRITICAL: Force immediate cache refresh across the application
-            try:
-                # Clear all related caches
-                clear_user_cache()
-                
-                # Force reload the updated data to verify it worked
-                verification_df = load_csv_with_cache('users.csv', force_reload=True)
-                if verification_df is not None and not verification_df.empty:
-                    # Verify the password was actually updated
-                    verification_user = verification_df[
-                        verification_df['username'].astype(str).str.strip().str.lower() == username.lower()
-                    ]
-                    if not verification_user.empty:
-                        updated_password = str(verification_user.iloc[0]['password']).strip()
-                        if updated_password == new_password:
-                            print(f"[{operation_id}] Password update verified successfully")
-                        else:
-                            print(f"[{operation_id}] WARNING: Password verification failed")
-                
-                print(f"[{operation_id}] Cache cleared and reloaded successfully")
-                
-            except Exception as e:
-                print(f"[{operation_id}] Warning: Cache refresh failed: {e}")
-                # Don't fail the request if cache refresh fails
-            
-            print(f"[{operation_id}] Password reset completed successfully")
-            return jsonify({
-                'success': True,
-                'message': 'Password updated successfully. Please login with your new password.'
-            })
-    
-    except Exception as e:
-        print(f"[{operation_id}] Critical error in password reset: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'message': 'System error occurred. Please try again.',
-            'field_errors': {'oldPassword': f'System error: {str(e)}'}
-        }), 500
-
-
-
-
-
-
 
 def generate_username(full_name, existing_usernames):
-    """Generate a unique username based on full name"""
-    name_parts = full_name.lower().replace(' ', '').replace('.', '')
-    base_username = name_parts[:8]
-
-    username = base_username
+    """Generate username from full name using firstname.lastname format"""
+    # Clean the full name and create FirstName.LastName format
+    clean_name = ' '.join(full_name.strip().split()).lower()
+    
+    # Replace spaces with dots for username format
+    base_username = clean_name.replace(' ', '.')
+    
+    # If not taken, return as-is
+    if base_username not in existing_usernames:
+        return base_username
+    
+    # If taken, add numbers
     counter = 1
+    username = f"{base_username}{counter}"
+    
     while username in existing_usernames:
-        username = f"{base_username}{counter}"
         counter += 1
-
+        username = f"{base_username}{counter}"
+    
     return username
 
-# 4. REPLACE your generate_password function (around line 10-15):
 
 def generate_password(length=8):
     """Generate a random password"""
@@ -2376,68 +2480,330 @@ def verify_email_exists(email):
 
 
 
+# ALSO UPDATE THE CREATE ACCOUNT ROUTE IN main.py WITH THIS PATTERN:
 
 @app.route('/create_account', methods=['GET', 'POST'])
 def create_account():
-    """Enhanced user registration with concurrent safety and retry"""
+    """Enhanced user registration with secure password setup via email."""
     if request.method == 'POST':
         try:
+            # Get form data
             email = request.form['email'].strip().lower()
-            full_name = request.form.get('full_name', '').strip()
+            first_name = request.form.get('first_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
 
+            # Validate inputs
             if not email:
                 flash('Please enter your email address.', 'error')
-                return render_template('create_account.html')
+                return redirect(url_for('create_account'))  # Redirect instead of render
 
-            if not full_name:
-                flash('Please enter your full name.', 'error')
-                return render_template('create_account.html', email=email)
+            if not first_name:
+                flash('Please enter your first name.', 'error')
+                return redirect(url_for('create_account'))  # Redirect instead of render
+
+            if not last_name:
+                flash('Please enter your last name.', 'error')
+                return redirect(url_for('create_account'))  # Redirect instead of render
+
+            # Create full name from first and last name
+            full_name = f"{first_name} {last_name}".strip()
 
             is_valid, error_message = verify_email_exists(email)
             if not is_valid:
                 flash(f'Invalid email: {error_message}', 'error')
-                return render_template('create_account.html', email=email, full_name=full_name)
+                return redirect(url_for('create_account'))  # Redirect instead of render
 
-            # Use safe registration with retry
-            success, status, credentials = safe_user_register(email, full_name)
-            
-            if success or status == "exists":
-                # Send credentials email
-                email_sent, email_message = send_credentials_email(
-                    email, credentials['full_name'], credentials['username'], credentials['password']
-                )
+            # Use safe registration with file locking
+            with get_file_lock('users'):
+                users_df = safe_csv_load_with_recovery('users.csv')
 
-                if email_sent:
-                    if success:
-                        # New account was created
-                        flash('Account created successfully! Your credentials have been sent to your email. Please check your spam folder if you don\'t see it in your inbox.', 'success')
-                    else:
-                        # Account already existed
-                        flash('Account already exists! Your credentials have been sent to your email. Please check your spam folder if you don\'t see it in your inbox.', 'success')
+                # Check if email exists
+                if not users_df.empty and email.lower() in users_df['email'].str.lower().values:
+                    # Email already exists - don't reveal this, just say setup link sent
+                    flash('If this email is not already registered, a setup link has been sent. Please check your inbox and spam folder.', 'success')
+                    return redirect(url_for('registration_success_generic'))  # Already redirecting
+
+                # Get existing usernames for uniqueness check
+                existing_usernames = set()
+                if not users_df.empty and 'username' in users_df.columns:
+                    existing_usernames = set(users_df['username'].astype(str).str.lower())
+
+                # Generate next ID
+                next_id = 1
+                if not users_df.empty and 'id' in users_df.columns:
+                    next_id = int(users_df['id'].fillna(0).astype(int).max()) + 1
+
+                # Generate unique username using firstname.lastname format
+                username = generate_username(full_name, existing_usernames)
+
+                # Create new user data
+                new_user = {
+                    'id': next_id,
+                    'username': username,
+                    'email': email,
+                    'full_name': full_name,  # Keep storing full_name in CSV as before
+                    'password': '',  # Empty password - will be set via email link
+                    'role': 'user',
+                    'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'last_login': ''  # Add last_login field for consistency
+                }
+
+                # Add user to dataframe
+                if users_df.empty:
+                    users_df = pd.DataFrame([new_user])
                 else:
-                    msg = 'Account created!' if success else 'Account exists!'
-                    flash(f'{msg} Here are your credentials:', 'success')
-                
-                # Store information in session (secure way)
-                session['reg_success_type'] = "created" if success else "exists"
-                session['reg_email'] = email
-                session['reg_username'] = credentials['username']
-                session['reg_password'] = credentials['password']
-                session['reg_fullname'] = credentials['full_name']
-                
-                # Redirect to success page with clean URL
-                return redirect(url_for('registration_success'))
-            else:
-                flash(f'Registration failed: {status}. Please try again.', 'error')
-                return render_template('create_account.html', email=email, full_name=full_name)
+                    users_df = pd.concat([users_df, pd.DataFrame([new_user])], ignore_index=True)
+
+                # Save to CSV
+                if safe_csv_save_with_retry(users_df, 'users'):
+                    try:
+                        # Generate setup token
+                        setup_token = create_password_token(email, 'setup')
+
+                        # Send setup email (now includes username)
+                        email_sent, email_message = send_password_setup_email(email, full_name, username, setup_token)
+
+                        if email_sent:
+                            flash('Account created successfully! Please check your email for setup instructions.', 'success')
+                        else:
+                            print(f"Failed to send setup email to {email}: {email_message}")
+                            flash('Account created, but email sending failed. Please contact admin.', 'warning')
+
+                        return redirect(url_for('registration_success_generic'))  # Already redirecting
+
+                    except Exception as e:
+                        print(f"Error sending setup email: {e}")
+                        flash('Account created, but email sending failed. Please contact admin.', 'warning')
+                        return redirect(url_for('registration_success_generic'))  # Already redirecting
+                else:
+                    flash('Registration failed. Please try again.', 'error')
+                    return redirect(url_for('create_account'))  # Redirect instead of render
 
         except Exception as e:
             print(f"Registration error: {e}")
             flash('System error occurred. Please try again.', 'error')
-            return render_template('create_account.html')
+            return redirect(url_for('create_account'))  # Redirect instead of render
     
-    # GET request
-    return render_template('create_account.html')
+    # GET request - render form with any preserved values
+    return render_template('create_account.html',
+                         email=request.args.get('email', ''),
+                         first_name=request.args.get('first_name', ''),
+                         last_name=request.args.get('last_name', ''))
+    
+    
+    
+
+@app.route('/registration-success')
+def registration_success_generic():
+    """Generic registration success page."""
+    return render_template('registration_success.html')
+
+
+
+# =============================================
+# NEW PASSWORD ROUTES - ADD TO main.py
+# =============================================
+
+@app.route('/setup-password/<token>', methods=['GET', 'POST'])
+def setup_password(token):
+    """Password setup route for new users."""
+    if request.method == 'POST':
+        try:
+            new_password = request.form.get('new_password', '').strip()
+            confirm_password = request.form.get('confirm_password', '').strip()
+
+            # Validate passwords
+            if not new_password or not confirm_password:
+                flash('Both password fields are required.', 'error')
+                return render_template('password_setup_form.html', token=token)
+
+            if new_password != confirm_password:
+                flash('Passwords do not match.', 'error')
+                return render_template('password_setup_form.html', token=token)
+
+            # Validate password strength
+            is_strong, strength_message = validate_password_strength(new_password)
+            if not is_strong:
+                flash(strength_message, 'error')
+                return render_template('password_setup_form.html', token=token)
+
+            # Validate and use token
+            token_valid, message, token_data = validate_and_use_token(token)
+            if not token_valid:
+                flash(message, 'error')
+                return redirect(url_for('login'))
+
+            if token_data.get('type') != 'setup':
+                flash('Invalid setup token.', 'error')
+                return redirect(url_for('login'))
+
+            # Update user password
+            users_df = load_csv_with_cache('users.csv')
+            if users_df is None or users_df.empty:
+                flash('User database error.', 'error')
+                return redirect(url_for('login'))
+
+            email = token_data['email']
+            user_mask = users_df['email'].str.lower() == email.lower()
+            if not user_mask.any():
+                flash('User not found.', 'error')
+                return redirect(url_for('login'))
+
+            # Hash new password and update
+            hashed_password = hash_password(new_password)
+            users_df.loc[user_mask, 'password'] = hashed_password
+            users_df.loc[user_mask, 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            if safe_csv_save_with_retry(users_df, 'users'):
+                user = users_df[user_mask].iloc[0]
+                flash(f'Password set successfully! You can now login with username: {user["username"]}', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash('Failed to set password. Please try again.', 'error')
+                return render_template('password_setup_form.html', token=token)
+
+        except Exception as e:
+            print(f"Error setting up password: {e}")
+            flash('An error occurred. Please try again.', 'error')
+            return render_template('password_setup_form.html', token=token)
+
+    # GET request - show form
+    # Validate token first (but don't mark as used)
+    try:
+        tokens_df = load_csv_with_cache('pw_tokens.csv')
+        if tokens_df is None or tokens_df.empty:
+            flash('Invalid setup link.', 'error')
+            return redirect(url_for('login'))
+        
+        token_row = tokens_df[tokens_df['token'] == token]
+        if token_row.empty:
+            flash('Invalid setup link.', 'error')
+            return redirect(url_for('login'))
+        
+        token_data = token_row.iloc[0].to_dict()
+        
+        if token_data['used']:
+            flash('This setup link has already been used.', 'error')
+            return redirect(url_for('login'))
+        
+        expires_at = pd.to_datetime(token_data['expires_at'])
+        if datetime.now() > expires_at:
+            flash('This setup link has expired.', 'error')
+            return redirect(url_for('login'))
+        
+        if token_data.get('type') != 'setup':
+            flash('Invalid setup link type.', 'error')
+            return redirect(url_for('login'))
+    
+    except Exception as e:
+        print(f"Error validating setup token: {e}")
+        flash('Error validating setup link.', 'error')
+        return redirect(url_for('login'))
+    
+    return render_template('password_setup_form.html', token=token, email=token_data.get('email', ''))
+
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password_with_token(token):
+    """Password reset route for existing users."""
+    if request.method == 'POST':
+        try:
+            new_password = request.form.get('new_password', '').strip()
+            confirm_password = request.form.get('confirm_password', '').strip()
+
+            # Validate passwords
+            if not new_password or not confirm_password:
+                flash('Both password fields are required.', 'error')
+                return render_template('password_reset_form.html', token=token)
+
+            if new_password != confirm_password:
+                flash('Passwords do not match.', 'error')
+                return render_template('password_reset_form.html', token=token)
+
+            # Validate password strength
+            is_valid, error_message = validate_password_strength(new_password)
+            if not is_valid:
+                flash(error_message, 'error')
+                return render_template('password_reset_form.html', token=token)
+
+            # Validate and use token
+            token_valid, message, token_data = validate_and_use_token(token)
+            if not token_valid:
+                flash(message, 'error')
+                return redirect(url_for('login'))
+
+            # Verify token type
+            if token_data.get('type') != 'reset':
+                flash('Invalid reset token.', 'error')
+                return redirect(url_for('login'))
+
+            # Update user password
+            users_df = load_csv_with_cache('users.csv')
+            if users_df is None or users_df.empty:
+                flash('User database error.', 'error')
+                return redirect(url_for('login'))
+
+            email = token_data['email']
+            user_mask = users_df['email'].str.lower() == email.lower()
+            if not user_mask.any():
+                flash('User not found.', 'error')
+                return redirect(url_for('login'))
+
+            # Hash new password and update
+            hashed_password = hash_password(new_password)
+            users_df.loc[user_mask, 'password'] = hashed_password
+            users_df.loc[user_mask, 'updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            if safe_csv_save_with_retry(users_df, 'users'):
+                flash('Password updated successfully! You can now login with your new password.', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash('Failed to update password. Please try again.', 'error')
+                return render_template('password_reset_form.html', token=token)
+
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            flash('An error occurred. Please try again.', 'error')
+            return render_template('password_reset_form.html', token=token)
+
+    # GET request - show form
+    # Validate token first (but don't mark as used)
+    try:
+        tokens_df = load_csv_with_cache('pw_tokens.csv')
+        if tokens_df is None or tokens_df.empty:
+            flash('Invalid reset link.', 'error')
+            return redirect(url_for('login'))
+        
+        token_row = tokens_df[tokens_df['token'] == token]
+        if token_row.empty:
+            flash('Invalid reset link.', 'error')
+            return redirect(url_for('login'))
+        
+        token_data = token_row.iloc[0].to_dict()
+        
+        if token_data['used']:
+            flash('This reset link has already been used.', 'error')
+            return redirect(url_for('login'))
+        
+        expires_at = pd.to_datetime(token_data['expires_at'])
+        if datetime.now() > expires_at:
+            flash('This reset link has expired.', 'error')
+            return redirect(url_for('login'))
+        
+        if token_data.get('type') != 'reset':
+            flash('Invalid reset link type.', 'error')
+            return redirect(url_for('login'))
+    
+    except Exception as e:
+        print(f"Error validating reset token: {e}")
+        flash('Error validating reset link.', 'error')
+        return redirect(url_for('login'))
+    
+    return render_template('password_reset_form.html', token=token, email=token_data.get('email', ''))
+
+
 
 @app.route('/registration-success')
 def registration_success():
@@ -3876,7 +4242,10 @@ def submit_exam(exam_id):
 
         # SAFE: Save results atomically
         try:
-            save_success, save_message = safe_dual_file_save(results_df, responses_df, new_result, response_records)
+            # Add file locking to prevent concurrent exam submissions from corrupting CSVs
+            with get_file_lock('results'):
+                with get_file_lock('responses'):
+                    save_success, save_message = safe_dual_file_save(results_df, responses_df, new_result, response_records)
             
             if not save_success:
                 print(f"Failed to save result: {save_message}")
@@ -4872,6 +5241,175 @@ def ping():
     if 'user_id' in session:
         return '', 204  # No content, session is alive
     return jsonify({'reason': 'no_session'}), 401
+
+
+# =============================================
+# REMAINING PASSWORD ROUTES - ADD TO main.py
+# =============================================
+
+@app.route('/api/request-password-reset', methods=['POST'])
+def request_password_reset():
+    """API endpoint to request password reset via email."""
+    try:
+        data = request.get_json()
+        if not data or not data.get('email'):
+            return jsonify({
+                'success': False,
+                'message': 'Email address is required'
+            }), 400
+
+        email = data['email'].strip().lower()
+        client_ip = get_client_ip()
+
+        if not email:
+            return jsonify({
+                'success': False,
+                'message': 'Please enter a valid email address'
+            }), 400
+
+        # Always show success message to prevent email enumeration
+        success_message = "If an account exists with this email, a password reset link has been sent."
+
+        # Load users to check if email exists
+        users_df = load_csv_with_cache('users.csv')
+        if users_df is None or users_df.empty:
+            return jsonify({
+                'success': True,
+                'message': success_message
+            })
+
+        # Check if user exists
+        user_exists = email in users_df['email'].str.lower().values
+        
+        if user_exists:
+            try:
+                user_row = users_df[users_df['email'].str.lower() == email]
+                user = user_row.iloc[0]
+                full_name = user.get('full_name', 'User')
+                username = user.get('username', email.split('@')[0])  # Get username or fallback
+                
+                # Generate reset token
+                reset_token = create_password_token(email, 'reset')
+                
+                # Send reset email with username - UPDATED: now includes 4 parameters
+                email_sent, email_message = send_password_reset_email(email, full_name, username, reset_token)
+                
+                if not email_sent:
+                    print(f"Failed to send reset email to {email}: {email_message}")
+                
+            except Exception as e:
+                print(f"Error processing reset request for {email}: {e}")
+
+        # Always return success to prevent email enumeration
+        return jsonify({
+            'success': True,
+            'message': success_message
+        })
+
+    except Exception as e:
+        print(f"Error in password reset request: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'System error occurred. Please try again.'
+        }), 500
+
+# REPLACE THE PASSWORD RESET ROUTE IN main.py WITH THIS:
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password_page():
+    """Password reset page route with POST-Redirect-GET pattern."""
+    if request.method == 'POST':
+        try:
+            email = request.form.get('email', '').strip().lower()
+            
+            if not email:
+                flash('Please enter your email address.', 'error')
+                return redirect(url_for('reset_password_page'))  # Redirect instead of render
+
+            client_ip = get_client_ip()
+            
+            # Always show success message to prevent email enumeration
+            success_message = "If an account exists with this email, a password reset link has been sent. Please check your inbox and spam folder."
+
+            # Load users to check if email exists
+            users_df = load_csv_with_cache('users.csv')
+            
+            if users_df is not None and not users_df.empty:
+                user_exists = email in users_df['email'].str.lower().values
+                
+                if user_exists:
+                    try:
+                        user_row = users_df[users_df['email'].str.lower() == email]
+                        user = user_row.iloc[0]
+                        full_name = user.get('full_name', 'User')
+                        username = user.get('username', email.split('@')[0])  # Get username or fallback
+                        
+                        # Generate reset token
+                        reset_token = create_password_token(email, 'reset')
+                        
+                        # Send reset email with username
+                        email_sent, email_message = send_password_reset_email(email, full_name, username, reset_token)
+                        
+                        if not email_sent:
+                            print(f"Failed to send reset email to {email}: {email_message}")
+                        
+                    except Exception as e:
+                        print(f"Error processing reset request for {email}: {e}")
+
+            # Flash the success message and redirect (POST-Redirect-GET pattern)
+            flash(success_message, 'success')
+            return redirect(url_for('reset_password_page'))  # Redirect instead of render
+            
+        except Exception as e:
+            print(f"Error in password reset: {e}")
+            flash('System error occurred. Please try again.', 'error')
+            return redirect(url_for('reset_password_page'))  # Redirect instead of render
+    
+    # GET request - show the form (after redirect or direct access)
+    return render_template('password_reset.html')
+
+# ADD migration route (run once to convert existing passwords)
+@app.route('/admin/migrate-passwords')
+@require_admin_role
+def admin_migrate_passwords():
+    """One-time migration route to convert plaintext passwords to bcrypt."""
+    try:
+        success, message = migrate_plaintext_passwords()
+        
+        if success:
+            flash(f'Password migration completed: {message}', 'success')
+        else:
+            flash(f'Password migration failed: {message}', 'error')
+        
+        return redirect(url_for('admin.dashboard'))
+        
+    except Exception as e:
+        print(f"Error in password migration: {e}")
+        flash(f'Migration error: {str(e)}', 'error')
+        return redirect(url_for('admin.dashboard'))
+
+# UPDATE existing API route for secure password change
+@app.route('/api/reset-password', methods=['POST'])
+def api_reset_password():
+    """REPLACE existing api_reset_password with secure version."""
+    try:
+        data = request.get_json()
+        
+        # This is now handled by the token-based system
+        # Redirect users to use the proper reset flow
+        return jsonify({
+            'success': False,
+            'message': 'Please use the reset link sent to your email to change your password.',
+            'redirect': url_for('reset_password_page')
+        }), 400
+        
+    except Exception as e:
+        print(f"Error in API reset password: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'System error occurred'
+        }), 500
+
 
 # -------------------------
 # Run App - CRITICAL INITIALIZATION
